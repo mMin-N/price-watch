@@ -5,12 +5,13 @@ import type { Wishlist } from "@/lib/types/product";
 
 type AddProductFormProps = {
   onSuccess: () => void;
+  wishlistItemId?: string;
 };
 
-export function AddProductForm({ onSuccess }: AddProductFormProps) {
+export function AddProductForm({ onSuccess, wishlistItemId: fixedWishlistItemId }: AddProductFormProps) {
   const [url, setUrl] = useState("");
   const [targetPrice, setTargetPrice] = useState("");
-  const [wishlistItemId, setWishlistItemId] = useState("");
+  const [wishlistItemId, setWishlistItemId] = useState(fixedWishlistItemId ?? "");
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -31,11 +32,13 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
       }
     }
 
-    fetchWishlists();
+    if (!fixedWishlistItemId) {
+      fetchWishlists();
+    }
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fixedWishlistItemId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,7 +77,9 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
 
       setUrl("");
       setTargetPrice("");
-      setWishlistItemId("");
+      if (!fixedWishlistItemId) {
+        setWishlistItemId("");
+      }
       onSuccess();
     } catch {
       setError("Failed to add product");
@@ -127,27 +132,29 @@ export function AddProductForm({ onSuccess }: AddProductFormProps) {
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="wishlist"
-              className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              Wishlist (optional)
-            </label>
-            <select
-              id="wishlist"
-              value={wishlistItemId}
-              onChange={(e) => setWishlistItemId(e.target.value)}
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            >
-              <option value="">None</option>
-              {wishlists.map((wishlist) => (
-                <option key={wishlist.id} value={wishlist.id}>
-                  {wishlist.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!fixedWishlistItemId && (
+            <div>
+              <label
+                htmlFor="wishlist"
+                className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                Wishlist (optional)
+              </label>
+              <select
+                id="wishlist"
+                value={wishlistItemId}
+                onChange={(e) => setWishlistItemId(e.target.value)}
+                className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="">None</option>
+                {wishlists.map((wishlist) => (
+                  <option key={wishlist.id} value={wishlist.id}>
+                    {wishlist.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
