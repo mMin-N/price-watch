@@ -78,6 +78,23 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="notifications"
+        options={{
+          title: "Notifications",
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: "bell.fill",
+                android: "notifications",
+                web: "notifications",
+              }}
+              tintColor={color}
+              size={26}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
