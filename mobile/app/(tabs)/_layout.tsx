@@ -62,7 +62,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="wishlists"
         options={{
           title: "Wishlists",
           tabBarIcon: ({ color }) => (

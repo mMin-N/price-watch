@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
+import { mapProduct, PRODUCT_COLUMNS } from "@/lib/api/product-map";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -21,6 +22,43 @@ async function getOwnedWishlist(
   }
 
   return { wishlist: data, error: null };
+}
+
+export async function GET(request: Request, context: RouteContext) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
+  if (response) return response;
+
+  const { id } = await context.params;
+
+  const { wishlist, error: fetchError } = await getOwnedWishlist(supabase, user.id, id);
+  if (fetchError) {
+    return jsonError(500, fetchError);
+  }
+  if (!wishlist) {
+    return jsonError(404, "Wishlist not found");
+  }
+
+  const { data: products, error: productsError } = await supabase
+    .from("tracked_products")
+    .select(PRODUCT_COLUMNS)
+    .eq("user_id", user.id)
+    .eq("wishlist_item_id", id)
+    .order("created_at", { ascending: false });
+
+  if (productsError) {
+    return jsonError(500, productsError.message);
+  }
+
+  const mappedProducts = (products ?? []).map(mapProduct);
+
+  return NextResponse.json({
+    id: wishlist.id,
+    name: wishlist.name,
+    createdAt: wishlist.created_at,
+    updatedAt: wishlist.updated_at,
+    productCount: mappedProducts.length,
+    products: mappedProducts,
+  });
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
