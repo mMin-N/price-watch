@@ -7,6 +7,10 @@ import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
 import { apiFetch } from "@/lib/api-client";
+import {
+  registerForPushNotifications,
+  setupNotificationResponseListener,
+} from "@/lib/notifications";
 import { supabase } from "@/lib/supabase";
 
 export {
@@ -116,7 +120,41 @@ function AuthGate({ children }: { children: React.ReactNode }) {
     return <Redirect href="/(tabs)" />;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <PushNotificationsSetup
+        session={session}
+        emailVerified={emailVerified}
+        isLoading={isLoading}
+      />
+      {children}
+    </>
+  );
+}
+
+function PushNotificationsSetup({
+  session,
+  emailVerified,
+  isLoading,
+}: {
+  session: Session | null;
+  emailVerified: boolean | null;
+  isLoading: boolean;
+}) {
+  const router = useRouter();
+  const isAuthenticated = !isLoading && !!session && emailVerified === true;
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    void registerForPushNotifications();
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    return setupNotificationResponseListener(router);
+  }, [isAuthenticated, router]);
+
+  return null;
 }
 
 export default function RootLayout() {
@@ -152,6 +190,13 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="products" options={{ headerShown: false }} />
           <Stack.Screen name="wishlists" options={{ headerShown: false }} />
+          <Stack.Screen
+            name="settings"
+            options={{
+              title: "Settings",
+              headerBackTitle: "Back",
+            }}
+          />
           <Stack.Screen name="modal" options={{ presentation: "modal" }} />
         </Stack>
       </AuthGate>

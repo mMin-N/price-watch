@@ -1,6 +1,6 @@
 import { SymbolView } from "expo-symbols";
 import { Tabs, useRouter } from "expo-router";
-import { Pressable } from "react-native";
+import { Pressable, View } from "react-native";
 
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
@@ -44,20 +44,45 @@ export default function TabLayout() {
             />
           ),
           headerRight: () => (
-            <Pressable
-              onPress={() => router.push("/products/add")}
-              style={{ marginRight: 15 }}
-              accessibilityLabel="Add product"
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginRight: 15,
+                gap: 12,
+              }}
             >
-              {({ pressed }) => (
-                <SymbolView
-                  name={{ ios: "plus", android: "add", web: "add" }}
-                  size={25}
-                  tintColor={colors.text}
-                  style={{ opacity: pressed ? 0.5 : 1 }}
-                />
-              )}
-            </Pressable>
+              <Pressable
+                onPress={() => router.push("/settings")}
+                accessibilityLabel="Settings"
+              >
+                {({ pressed }) => (
+                  <SymbolView
+                    name={{
+                      ios: "gearshape",
+                      android: "settings",
+                      web: "settings",
+                    }}
+                    size={24}
+                    tintColor={colors.text}
+                    style={{ opacity: pressed ? 0.5 : 1 }}
+                  />
+                )}
+              </Pressable>
+              <Pressable
+                onPress={() => router.push("/products/add")}
+                accessibilityLabel="Add product"
+              >
+                {({ pressed }) => (
+                  <SymbolView
+                    name={{ ios: "plus", android: "add", web: "add" }}
+                    size={25}
+                    tintColor={colors.text}
+                    style={{ opacity: pressed ? 0.5 : 1 }}
+                  />
+                )}
+              </Pressable>
+            </View>
           ),
         }}
       />
