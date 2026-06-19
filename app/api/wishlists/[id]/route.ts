@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 async function getOwnedWishlist(
-  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  supabase: NonNullable<Awaited<ReturnType<typeof requireUserFromRequest>>["supabase"]>,
   userId: string,
   id: string
 ) {
@@ -24,7 +24,7 @@ async function getOwnedWishlist(
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  const { supabase, user, response } = await requireUser();
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const { id } = await context.params;
@@ -69,8 +69,8 @@ export async function PATCH(request: Request, context: RouteContext) {
   });
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
-  const { supabase, user, response } = await requireUser();
+export async function DELETE(request: Request, context: RouteContext) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const { id } = await context.params;

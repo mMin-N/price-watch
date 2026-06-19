@@ -1,54 +1,30 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest, requireVerifiedUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
-import { runPricePipeline } from "@/lib/pipeline/run-price-pipeline";
-import { ZenRowsProvider } from "@/lib/providers/zenrows";
+import { enforceRateLimit } from "@/lib/api/rate-limit";
+import { productFetchErrorResponse } from "@/lib/api/product-fetch-errors";
+import { mapProduct, PRODUCT_COLUMNS } from "@/lib/api/product-map";
+import {
+  parseDiscountAlertPercent,
+  parseOptionalPrice,
+  validateOwnedWishlistItem,
+} from "@/lib/api/validate-product-input";
+import { APP_CURRENCY } from "@/lib/providers/normalize-price";
+import { fetchNormalizedProductPrice } from "@/lib/pipeline/fetch-normalized-price";
+import { persistPriceSnapshot } from "@/lib/pipeline/persist-price-snapshot";
+import {
+  canonicalUrlForStorage,
+  findTrackedProductByUrl,
+} from "@/lib/url/find-tracked-product";
+import { rollbackInsertedProduct } from "@/lib/supabase/delete-owned-row";
+import { MAX_TRACKED_PRODUCTS_PER_USER } from "@/lib/tracking/tracking-policy";
+import { touchUserActivity } from "@/lib/tracking/touch-user-activity";
 
-const PRODUCT_COLUMNS =
-  "id, url, title, target_price, currency, last_price, last_fetched_at, wishlist_item_id, created_at, updated_at";
-
-type ProductRow = {
-  id: string;
-  url: string;
-  title: string | null;
-  target_price: number | null;
-  currency: string | null;
-  last_price: number | null;
-  last_fetched_at: string | null;
-  wishlist_item_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-function mapProduct(row: ProductRow) {
-  return {
-    id: row.id,
-    url: row.url,
-    title: row.title,
-    targetPrice: row.target_price,
-    currency: row.currency ?? "USD",
-    lastPrice: row.last_price,
-    lastFetchedAt: row.last_fetched_at,
-    wishlistItemId: row.wishlist_item_id,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
-
-function pipelineErrorResponse(err: unknown) {
-  const message = err instanceof Error ? err.message : "Pipeline failed";
-  if (message.includes("ZenRows")) {
-    return jsonError(502, "Cannot fetch price temporarily");
-  }
-  if (message.includes("Cannot parse price")) {
-    return jsonError(422, "Cannot parse price from page");
-  }
-  return jsonError(500, message);
-}
-
-export async function GET() {
-  const { supabase, user, response } = await requireUser();
+export async function GET(request: Request) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
+
+  await touchUserActivity(supabase, user.id);
 
   const { data, error } = await supabase
     .from("tracked_products")
@@ -64,12 +40,22 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { supabase, user, response } = await requireUser();
+  const { supabase, user, response } = await requireVerifiedUserFromRequest(request);
   if (response) return response;
 
-  const body = await request.json();
+  const rateLimited = await enforceRateLimit(supabase, user.id, "add_product");
+  if (rateLimited) return rateLimited;
+
+  let body: Record<string, unknown>;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonError(400, "Invalid JSON body");
+  }
+
   const url = body?.url;
-  const targetPrice = body?.targetPrice;
+  const targetPrice = parseOptionalPrice(body?.targetPrice);
+  const discountAlertPercent = parseDiscountAlertPercent(body?.discountAlertPercent);
   const wishlistItemId = body?.wishlistItemId;
 
   if (!url || typeof url !== "string" || !url.trim()) {
@@ -77,6 +63,7 @@ export async function POST(request: Request) {
   }
 
   const trimmedUrl = url.trim();
+  const storedUrl = canonicalUrlForStorage(trimmedUrl);
 
   try {
     new URL(trimmedUrl);
@@ -84,8 +71,12 @@ export async function POST(request: Request) {
     return jsonError(400, "Invalid URL");
   }
 
-  if (targetPrice !== undefined && targetPrice !== null && typeof targetPrice !== "number") {
-    return jsonError(400, "targetPrice must be a number");
+  if (targetPrice === "invalid") {
+    return jsonError(400, "targetPrice must be a non-negative finite number");
+  }
+
+  if (discountAlertPercent === "invalid") {
+    return jsonError(400, "discountAlertPercent must be between 1 and 100");
   }
 
   if (
@@ -96,24 +87,66 @@ export async function POST(request: Request) {
     return jsonError(400, "wishlistItemId must be a string");
   }
 
-  const { data: duplicate } = await supabase
-    .from("tracked_products")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("url", trimmedUrl)
-    .maybeSingle();
+  let wishlistError: string | null;
+  try {
+    wishlistError = await validateOwnedWishlistItem(
+      supabase,
+      user.id,
+      wishlistItemId as string | null | undefined
+    );
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to validate wishlist";
+    return jsonError(500, message);
+  }
+  if (wishlistError) {
+    return jsonError(400, wishlistError);
+  }
+
+  let duplicate;
+  try {
+    duplicate = await findTrackedProductByUrl(supabase, user.id, trimmedUrl);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to check duplicates";
+    return jsonError(500, message);
+  }
 
   if (duplicate) {
-    return jsonError(409, "Already tracking this URL");
+    return jsonError(409, "Already tracking this URL", { existingId: duplicate.id });
+  }
+
+  const { count: productCount, error: countError } = await supabase
+    .from("tracked_products")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id);
+
+  if (countError) {
+    return jsonError(500, countError.message);
+  }
+  if ((productCount ?? 0) >= MAX_TRACKED_PRODUCTS_PER_USER) {
+    return jsonError(
+      403,
+      `You can track up to ${MAX_TRACKED_PRODUCTS_PER_USER} products. Remove one to add another.`
+    );
+  }
+
+  let fetchResult;
+  try {
+    fetchResult = await fetchNormalizedProductPrice(trimmedUrl);
+  } catch (err) {
+    return productFetchErrorResponse(err);
   }
 
   const { data: inserted, error: insertError } = await supabase
     .from("tracked_products")
     .insert({
       user_id: user.id,
-      url: trimmedUrl,
-      target_price: targetPrice ?? null,
-      wishlist_item_id: wishlistItemId ?? null,
+      url: storedUrl,
+      title: fetchResult.title?.trim() || null,
+      target_price: targetPrice,
+      discount_alert_percent: discountAlertPercent,
+      baseline_price: fetchResult.price,
+      wishlist_item_id: (wishlistItemId as string | null | undefined) ?? null,
+      currency: APP_CURRENCY,
     })
     .select(PRODUCT_COLUMNS)
     .single();
@@ -125,11 +158,19 @@ export async function POST(request: Request) {
     return jsonError(500, insertError.message);
   }
 
+  const correlationId = `${inserted.id}-${Date.now()}`;
   let pipelineResult;
+
   try {
-    pipelineResult = await runPricePipeline(supabase, inserted.id, new ZenRowsProvider());
+    pipelineResult = await persistPriceSnapshot(
+      supabase,
+      inserted.id,
+      fetchResult,
+      correlationId
+    );
   } catch (err) {
-    return pipelineErrorResponse(err);
+    await rollbackInsertedProduct(supabase, inserted.id, user.id);
+    return productFetchErrorResponse(err);
   }
 
   const { data: product, error: fetchError } = await supabase
@@ -141,6 +182,8 @@ export async function POST(request: Request) {
   if (fetchError || !product) {
     return jsonError(500, fetchError?.message ?? "Failed to load product");
   }
+
+  await touchUserActivity(supabase, user.id);
 
   return NextResponse.json({
     ...mapProduct(product),

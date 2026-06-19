@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
 
-export async function GET() {
-  const { supabase, user, response } = await requireUser();
+export async function GET(request: Request) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const { data, error } = await supabase
@@ -28,7 +28,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { supabase, user, response } = await requireUser();
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const body = await request.json();

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
 
 type NotificationRow = {
@@ -23,7 +23,7 @@ function mapNotification(row: NotificationRow) {
 }
 
 export async function GET(request: Request) {
-  const { supabase, user, response } = await requireUser();
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const { searchParams } = new URL(request.url);

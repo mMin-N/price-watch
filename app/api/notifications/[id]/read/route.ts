@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -28,7 +28,7 @@ function mapNotification(row: NotificationRow) {
 }
 
 async function getOwnedNotification(
-  supabase: Awaited<ReturnType<typeof requireUser>>["supabase"],
+  supabase: NonNullable<Awaited<ReturnType<typeof requireUserFromRequest>>["supabase"]>,
   userId: string,
   id: string
 ) {
@@ -46,8 +46,8 @@ async function getOwnedNotification(
   return { notification: data, error: null };
 }
 
-export async function PATCH(_request: Request, context: RouteContext) {
-  const { supabase, user, response } = await requireUser();
+export async function PATCH(request: Request, context: RouteContext) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const { id } = await context.params;

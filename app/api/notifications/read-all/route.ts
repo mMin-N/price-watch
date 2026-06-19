@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireUser } from "@/lib/api/auth";
+import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
 
-export async function POST() {
-  const { supabase, user, response } = await requireUser();
+export async function POST(request: Request) {
+  const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
   const readAt = new Date().toISOString();
