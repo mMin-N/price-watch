@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { PriceChart } from "@/components/price-chart";
 import type { Product } from "@/lib/types/product";
 
@@ -16,6 +16,9 @@ type PriceHistoryEntry = {
 
 type ProductDetail = Product & {
   priceHistory: PriceHistoryEntry[];
+  priceHistoryTotal?: number;
+  priceHistoryLimit?: number;
+  priceHistoryOffset?: number;
 };
 
 function formatPrice(price: number | null, currency: string) {
@@ -35,14 +38,17 @@ function formatDate(iso: string) {
 
 export default function ProductDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
 
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [targetPriceInput, setTargetPriceInput] = useState("");
-  const [savingTarget, setSavingTarget] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  const [discountAlertInput, setDiscountAlertInput] = useState("");
+  const [savingAlerts, setSavingAlerts] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
@@ -64,6 +70,9 @@ export default function ProductDetailPage() {
       setTargetPriceInput(
         data.targetPrice !== null ? String(data.targetPrice) : ""
       );
+      setDiscountAlertInput(
+        data.discountAlertPercent !== null ? String(data.discountAlertPercent) : ""
+      );
     } catch {
       setError("Failed to load product");
       setProduct(null);
@@ -76,20 +85,35 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [loadProduct]);
 
-  async function handleSaveTargetPrice() {
+  async function handleSaveAlerts() {
     if (!product) return;
 
-    setSavingTarget(true);
+    setSavingAlerts(true);
     setActionError(null);
     setActionSuccess(null);
 
-    const trimmed = targetPriceInput.trim();
+    const targetTrimmed = targetPriceInput.trim();
     const targetPrice =
-      trimmed === "" ? null : Number.parseFloat(trimmed);
+      targetTrimmed === "" ? null : Number.parseFloat(targetTrimmed);
 
-    if (trimmed !== "" && Number.isNaN(targetPrice)) {
-      setActionError("Target price must be a valid number");
-      setSavingTarget(false);
+    if (targetTrimmed !== "" && (Number.isNaN(targetPrice) || targetPrice! < 0)) {
+      setActionError("Target price must be a non-negative number");
+      setSavingAlerts(false);
+      return;
+    }
+
+    const discountTrimmed = discountAlertInput.trim();
+    const discountAlertPercent =
+      discountTrimmed === "" ? null : Number.parseFloat(discountTrimmed);
+
+    if (
+      discountTrimmed !== "" &&
+      (Number.isNaN(discountAlertPercent) ||
+        discountAlertPercent! <= 0 ||
+        discountAlertPercent! > 100)
+    ) {
+      setActionError("Discount alert must be between 1 and 100");
+      setSavingAlerts(false);
       return;
     }
 
@@ -97,61 +121,86 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetPrice }),
+        body: JSON.stringify({ targetPrice, discountAlertPercent }),
       });
       const data = (await res.json()) as Product & { error?: string };
 
       if (!res.ok) {
-        setActionError(data.error ?? "Failed to update target price");
+        setActionError(data.error ?? "Failed to update alert settings");
         return;
       }
 
       setProduct((prev) =>
-        prev ? { ...prev, targetPrice: data.targetPrice } : prev
+        prev
+          ? {
+              ...prev,
+              targetPrice: data.targetPrice,
+              discountAlertPercent: data.discountAlertPercent,
+            }
+          : prev
       );
       setTargetPriceInput(
         data.targetPrice !== null ? String(data.targetPrice) : ""
       );
-      setActionSuccess("Target price saved");
+      setDiscountAlertInput(
+        data.discountAlertPercent !== null ? String(data.discountAlertPercent) : ""
+      );
+      setActionSuccess("Alert settings saved");
     } catch {
-      setActionError("Failed to update target price");
+      setActionError("Failed to update alert settings");
     } finally {
-      setSavingTarget(false);
+      setSavingAlerts(false);
     }
   }
 
-  async function handleRefresh() {
-    setRefreshing(true);
+  async function handleDelete() {
+    if (!product) return;
+    const label = product.title ?? product.url;
+    if (!window.confirm(`Stop tracking "${label}"?`)) return;
+
+    setDeleting(true);
     setActionError(null);
-    setActionSuccess(null);
-
     try {
-      const res = await fetch(`/api/products/${id}/refresh`, {
-        method: "POST",
-      });
-      const data = (await res.json()) as { error?: string; retryAfterSeconds?: number };
-
-      if (res.status === 429 && data.retryAfterSeconds) {
-        const minutes = Math.ceil(data.retryAfterSeconds / 60);
-        setActionError(
-          data.error
-            ? `${data.error}. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`
-            : `Refresh cooldown active. Try again in about ${minutes} minute${minutes === 1 ? "" : "s"}.`
-        );
-        return;
-      }
-
+      const res = await fetch(`/api/products/${id}`, { method: "DELETE" });
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
-        setActionError(data.error ?? "Failed to refresh price");
+        setActionError(data.error ?? "Failed to delete product");
         return;
       }
-
-      setActionSuccess("Price refreshed");
-      await loadProduct();
+      router.push("/");
+      router.refresh();
     } catch {
-      setActionError("Failed to refresh price");
+      setActionError("Failed to delete product");
     } finally {
-      setRefreshing(false);
+      setDeleting(false);
+    }
+  }
+
+  async function handleLoadMoreHistory() {
+    if (!product) return;
+    setLoadingMoreHistory(true);
+    setActionError(null);
+    try {
+      const offset = product.priceHistory.length;
+      const res = await fetch(`/api/products/${id}?limit=90&offset=${offset}`);
+      const data = (await res.json()) as ProductDetail & { error?: string };
+      if (!res.ok) {
+        setActionError(data.error ?? "Failed to load more history");
+        return;
+      }
+      setProduct((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...data,
+              priceHistory: [...prev.priceHistory, ...(data.priceHistory ?? [])],
+            }
+          : prev
+      );
+    } catch {
+      setActionError("Failed to load more history");
+    } finally {
+      setLoadingMoreHistory(false);
     }
   }
 
@@ -203,6 +252,22 @@ export default function ProductDetailPage() {
           )}
 
           <section className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded bg-zinc-100 px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+                {product.site === "generic" ? "Unsupported site" : product.siteName}
+              </span>
+              {product.availabilityStatus === "out_of_stock" && (
+                <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                  Out of stock
+                </span>
+              )}
+              {product.alertActive && (
+                <span className="rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-950 dark:text-green-300">
+                  Alert active
+                </span>
+              )}
+            </div>
+
             <div>
               <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 URL
@@ -232,44 +297,89 @@ export default function ProductDetailPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="target-price"
-                className="text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Target price
-              </label>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <input
-                  id="target-price"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={targetPriceInput}
-                  onChange={(e) => setTargetPriceInput(e.target.value)}
-                  placeholder="No target set"
-                  className="w-40 rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                />
-                <button
-                  type="button"
-                  onClick={handleSaveTargetPrice}
-                  disabled={savingTarget}
-                  className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-                >
-                  {savingTarget ? "Saving..." : "Save"}
-                </button>
-              </div>
+              <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Baseline price
+              </h2>
+              <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
+                {formatPrice(product.baselinePrice, product.currency)}
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                Used to calculate discount % alerts
+              </p>
             </div>
 
             <div>
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                Alert settings
+              </p>
+              <div className="mt-2 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    htmlFor="target-price"
+                    className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Target price USD
+                  </label>
+                  <input
+                    id="target-price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={targetPriceInput}
+                    onChange={(e) => setTargetPriceInput(e.target.value)}
+                    placeholder="No target"
+                    className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="discount-alert"
+                    className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Discount alert %
+                  </label>
+                  <input
+                    id="discount-alert"
+                    type="number"
+                    min="1"
+                    max="100"
+                    step="0.1"
+                    value={discountAlertInput}
+                    onChange={(e) => setDiscountAlertInput(e.target.value)}
+                    placeholder="e.g. 20"
+                    className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
+                  />
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="rounded border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                onClick={handleSaveAlerts}
+                disabled={savingAlerts}
+                className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
               >
-                {refreshing ? "Refreshing..." : "Refresh price"}
+                {savingAlerts ? "Saving..." : "Save alerts"}
+              </button>
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                Notify when either condition is met
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-950"
+              >
+                {deleting ? "Deleting..." : "Stop tracking"}
               </button>
             </div>
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
+              Prices refresh automatically every 6 hours (12 hours for eBay and Meesho).
+              {product.autoRefreshPaused
+                ? " Auto-refresh is paused after repeated fetch failures."
+                : ""}
+            </p>
           </section>
 
           <section className="space-y-4">
@@ -318,6 +428,18 @@ export default function ProductDetailPage() {
                 </table>
               </div>
             )}
+
+            {product.priceHistoryTotal !== undefined &&
+              product.priceHistory.length < product.priceHistoryTotal && (
+                <button
+                  type="button"
+                  onClick={handleLoadMoreHistory}
+                  disabled={loadingMoreHistory}
+                  className="text-sm font-medium text-zinc-700 hover:text-zinc-900 disabled:opacity-50 dark:text-zinc-300"
+                >
+                  {loadingMoreHistory ? "Loading..." : "Load more history"}
+                </button>
+              )}
           </section>
         </>
       )}

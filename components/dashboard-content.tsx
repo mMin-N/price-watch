@@ -39,13 +39,21 @@ export function DashboardContent() {
         Tracked Products
       </h1>
 
-      <AddProductForm onSuccess={loadProducts} />
+      {error && (
+        <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </p>
+      )}
+
+      <AddProductForm
+        onSuccess={loadProducts}
+        disabled={Boolean(error)}
+        productCount={products.length}
+      />
 
       {loading ? (
         <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading products...</p>
-      ) : error ? (
-        <p className="text-sm text-red-600">{error}</p>
-      ) : (
+      ) : error ? null : (
         <ProductList products={products} onRefresh={loadProducts} />
       )}
     </div>

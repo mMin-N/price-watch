@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Price Watch Wishlist</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <h1>Price Watch</h1>
+      <p class="subtitle">Amazon wishlist (max 10)</p>
+    </header>
+
+    <section class="actions">
+      <button id="add-btn" type="button" class="btn btn-primary">
+        Add current page
+      </button>
+      <button id="refresh-btn" type="button" class="btn btn-secondary">
+        Refresh all
+      </button>
+    </section>
+
+    <div id="status-banner" class="status-banner hidden" role="status"></div>
+    <div id="progress" class="progress hidden">
+      <div class="progress-bar">
+        <div id="progress-fill" class="progress-fill"></div>
+      </div>
+      <p id="progress-text" class="progress-text"></p>
+    </div>
+
+    <ul id="wishlist" class="wishlist" aria-live="polite"></ul>
+
+    <p id="empty-state" class="empty-state hidden">
+      No items yet. Open an Amazon product page and click “Add current page”.
+    </p>
+
+    <details class="settings">
+      <summary>API settings</summary>
+      <p class="settings-help">
+        Log in to Price Watch, open
+        <a id="connect-link" href="http://localhost:3000/extension" target="_blank" rel="noopener noreferrer">/extension</a>,
+        copy your token, and paste it below.
+      </p>
+      <label class="settings-label" for="token-input">Access token</label>
+      <input
+        id="token-input"
+        class="settings-input"
+        type="password"
+        autocomplete="off"
+        placeholder="Paste Bearer token"
+      />
+      <button id="save-token-btn" type="button" class="btn btn-secondary settings-save">
+        Save token
+      </button>
+    </details>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

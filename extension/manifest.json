@@ -1,0 +1,66 @@
+{
+  "manifest_version": 3,
+  "name": "Price Watch Wishlist",
+  "version": "1.0.0",
+  "description": "Save Amazon products to a local wishlist and refresh prices from the page DOM.",
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Price Watch Wishlist"
+  },
+  "permissions": ["tabs", "storage", "scripting"],
+  "host_permissions": [
+    "https://www.amazon.com/*",
+    "https://www.amazon.co.uk/*",
+    "https://www.amazon.de/*",
+    "https://www.amazon.fr/*",
+    "https://www.amazon.it/*",
+    "https://www.amazon.es/*",
+    "https://www.amazon.ca/*",
+    "https://www.amazon.com.au/*",
+    "https://www.amazon.in/*",
+    "https://www.amazon.co.jp/*",
+    "https://www.amazon.com.mx/*",
+    "https://www.amazon.com.br/*",
+    "https://www.amazon.nl/*",
+    "https://www.amazon.se/*",
+    "https://www.amazon.pl/*",
+    "https://www.amazon.sg/*",
+    "https://www.amazon.ae/*",
+    "https://www.amazon.sa/*",
+    "https://www.amazon.com.tr/*",
+    "https://www.amazon.eg/*",
+    "http://localhost:3000/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.amazon.com/*",
+        "https://www.amazon.co.uk/*",
+        "https://www.amazon.de/*",
+        "https://www.amazon.fr/*",
+        "https://www.amazon.it/*",
+        "https://www.amazon.es/*",
+        "https://www.amazon.ca/*",
+        "https://www.amazon.com.au/*",
+        "https://www.amazon.in/*",
+        "https://www.amazon.co.jp/*",
+        "https://www.amazon.com.mx/*",
+        "https://www.amazon.com.br/*",
+        "https://www.amazon.nl/*",
+        "https://www.amazon.se/*",
+        "https://www.amazon.pl/*",
+        "https://www.amazon.sg/*",
+        "https://www.amazon.ae/*",
+        "https://www.amazon.sa/*",
+        "https://www.amazon.com.tr/*",
+        "https://www.amazon.eg/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

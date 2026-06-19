@@ -37,9 +37,14 @@ create table tracked_products (
   url text not null,
   title text,
   target_price numeric,
+  discount_alert_percent numeric,
+  baseline_price numeric,
   currency text default 'USD',
   last_price numeric,
   last_fetched_at timestamptz,
+  target_price_alert_active boolean not null default false,
+  discount_alert_active boolean not null default false,
+  pipeline_lock_until timestamptz,
   created_at timestamptz default now(),
   updated_at timestamptz default now(),
   unique (user_id, url)
@@ -74,7 +79,9 @@ create table alert_logs (
   tracked_product_id uuid not null references tracked_products(id) on delete cascade,
   price_history_id uuid not null references price_history(id),
   triggered_price numeric not null,
-  target_price numeric not null,
+  target_price numeric,
+  trigger_reason text not null default 'target_price',
+  discount_percent numeric,
   email_sent boolean default false,
   created_at timestamptz default now()
 );
@@ -104,5 +111,8 @@ create policy "price_history_insert_own" on price_history for insert with check 
 create policy "notifications_all_own" on notifications for all using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy "alert_logs_select_own" on alert_logs for select using (
+  exists (select 1 from tracked_products tp where tp.id = alert_logs.tracked_product_id and tp.user_id = auth.uid())
+);
+create policy "alert_logs_insert_own" on alert_logs for insert with check (
   exists (select 1 from tracked_products tp where tp.id = alert_logs.tracked_product_id and tp.user_id = auth.uid())
 );

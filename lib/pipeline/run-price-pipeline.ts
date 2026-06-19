@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PriceProvider } from "@/lib/providers/price-provider";
-import { shouldTriggerAlert } from "./evaluate-alert";
-import { sendPriceAlertEmail } from "@/lib/email/send-alert";
+import { resolveProviderId } from "@/lib/providers/get-price-provider";
+import { detectSite } from "@/lib/providers/detect-site";
+import { normalizeFetchResultToUsd } from "@/lib/providers/normalize-price";
+import { logPipelineEvent } from "@/lib/observability/pipeline-event";
+import { persistPriceSnapshot } from "./persist-price-snapshot";
 
 export async function runPricePipeline(
   supabase: SupabaseClient,
@@ -12,91 +15,62 @@ export async function runPricePipeline(
 
   const { data: product, error: loadError } = await supabase
     .from("tracked_products")
-    .select("id, user_id, url, target_price, title")
+    .select("id, url")
     .eq("id", trackedProductId)
     .single();
 
   if (loadError || !product) throw new Error("Tracked product not found");
-  console.log(JSON.stringify({ step: "input", correlationId, url: product.url, userId: product.user_id }));
 
-  const { price, currency } = await provider.fetchPrice(product.url);
+  const site = detectSite(product.url);
+  console.log(JSON.stringify({ step: "input", correlationId, url: product.url, site }));
 
-  const { data: history, error: historyError } = await supabase
-    .from("price_history")
-    .insert({
-      tracked_product_id: product.id,
-      price,
-      currency,
-      provider: "zenrows",
-    })
-    .select("id")
-    .single();
-
-  if (historyError || !history) throw new Error("Failed to insert price history");
-  console.log(JSON.stringify({ step: "db_write", correlationId, priceHistoryId: history.id, success: true }));
-
-  await supabase
-    .from("tracked_products")
-    .update({ last_price: price, last_fetched_at: new Date().toISOString(), currency })
-    .eq("id", product.id);
-
-  const triggered = shouldTriggerAlert(price, product.target_price);
-  console.log(JSON.stringify({
-    step: "alert_eval",
-    correlationId,
-    targetPrice: product.target_price,
-    currentPrice: price,
-    triggered,
-  }));
-
-  if (!triggered) return { price, currency, alerted: false };
-
-  const { data: existingAlert } = await supabase
-    .from("alert_logs")
-    .select("id")
-    .eq("price_history_id", history.id)
-    .maybeSingle();
-
-  if (existingAlert) return { price, currency, alerted: false };
-
-  const message = `Price dropped to ${currency} ${price} (target: ${product.target_price})`;
-  const { data: notification } = await supabase
-    .from("notifications")
-    .insert({
-      user_id: product.user_id,
-      tracked_product_id: product.id,
-      message,
-    })
-    .select("id")
-    .single();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("email")
-    .eq("id", product.user_id)
-    .single();
-
-  let emailSent = false;
-  if (profile?.email) {
-    emailSent = await sendPriceAlertEmail({
-      to: profile.email,
-      productTitle: product.title ?? product.url,
-      url: product.url,
-      price,
-      targetPrice: product.target_price!,
-      currency,
+  const fetchStart = Date.now();
+  let rawResult;
+  try {
+    rawResult = await provider.fetchPrice(product.url);
+    await logPipelineEvent(supabase, {
+      trackedProductId,
+      site,
+      step: "fetch",
+      success: true,
+      durationMs: Date.now() - fetchStart,
     });
+  } catch (err) {
+    await logPipelineEvent(supabase, {
+      trackedProductId,
+      site,
+      step: "fetch",
+      success: false,
+      durationMs: Date.now() - fetchStart,
+      errorCode: err instanceof Error ? err.message.slice(0, 200) : "fetch_failed",
+    });
+    throw err;
   }
 
-  await supabase.from("alert_logs").insert({
-    tracked_product_id: product.id,
-    price_history_id: history.id,
-    triggered_price: price,
-    target_price: product.target_price!,
-    email_sent: emailSent,
-  });
+  console.log(JSON.stringify({
+    step: "provider_response",
+    correlationId,
+    price: rawResult.price,
+    currency: rawResult.currency,
+  }));
 
-  console.log(JSON.stringify({ step: "notify", correlationId, notificationId: notification?.id, emailSent }));
+  const fetchResult = await normalizeFetchResultToUsd(rawResult);
+  if (fetchResult.originalCurrency) {
+    console.log(JSON.stringify({
+      step: "normalize",
+      correlationId,
+      originalPrice: fetchResult.originalPrice,
+      originalCurrency: fetchResult.originalCurrency,
+      convertedPrice: fetchResult.price,
+      currency: fetchResult.currency,
+    }));
+  }
 
-  return { price, currency, alerted: true };
+  return persistPriceSnapshot(
+    supabase,
+    trackedProductId,
+    fetchResult,
+    correlationId,
+    resolveProviderId(product.url)
+  );
 }

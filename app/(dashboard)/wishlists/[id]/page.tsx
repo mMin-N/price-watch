@@ -13,6 +13,7 @@ export default function WishlistDetailPage() {
 
   const [wishlistName, setWishlistName] = useState<string | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
+  const [totalProductCount, setTotalProductCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,9 +53,9 @@ export default function WishlistDetailPage() {
       }
 
       setWishlistName(wishlist.name);
-      setProducts(
-        (productsData.products ?? []).filter((p) => p.wishlistItemId === id)
-      );
+      const allProducts = productsData.products ?? [];
+      setTotalProductCount(allProducts.length);
+      setProducts(allProducts.filter((p) => p.wishlistItemId === id));
     } catch {
       setError("Failed to load wishlist");
     } finally {
@@ -94,7 +95,11 @@ export default function WishlistDetailPage() {
         <p className="text-sm text-red-600">{error}</p>
       ) : (
         <>
-          <AddProductForm wishlistItemId={id} onSuccess={loadData} />
+          <AddProductForm
+            wishlistItemId={id}
+            onSuccess={loadData}
+            productCount={totalProductCount}
+          />
 
           {loading ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading products...</p>

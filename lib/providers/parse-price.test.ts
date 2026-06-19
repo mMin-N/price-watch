@@ -9,7 +9,12 @@ describe("parsePriceFromHtml", () => {
 
   it("extracts price from dollar text", () => {
     const html = '<span class="price">$19.50</span>';
-    expect(parsePriceFromHtml(html)).toEqual({ price: 19.5, currency: "USD" });
+    expect(parsePriceFromHtml(html)).toEqual({ price: 19.50, currency: "USD" });
+  });
+
+  it("extracts Amazon a-offscreen price", () => {
+    const html = '<span class="a-offscreen">$5,699.99</span>';
+    expect(parsePriceFromHtml(html)).toEqual({ price: 5699.99, currency: "USD" });
   });
 
   it("returns null when no price found", () => {
