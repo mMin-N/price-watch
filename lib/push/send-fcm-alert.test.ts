@@ -1,14 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
 
-vi.mock("firebase-admin", () => ({
-  default: {
-    apps: [],
-    initializeApp: vi.fn(),
-    credential: { cert: vi.fn() },
-    messaging: () => ({
-      send: vi.fn().mockResolvedValue("msg-id"),
-    }),
-  },
+vi.mock("firebase-admin/app", () => ({
+  getApps: vi.fn(() => []),
+  initializeApp: vi.fn(),
+  cert: vi.fn(),
+}));
+
+vi.mock("firebase-admin/messaging", () => ({
+  getMessaging: vi.fn(() => ({
+    send: vi.fn().mockResolvedValue("msg-id"),
+  })),
 }));
 
 import { sendFcmAlert } from "./send-fcm-alert";

@@ -1,7 +1,6 @@
-import admin from "firebase-admin";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getMessaging, type Messaging } from "firebase-admin/messaging";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-let initialized = false;
 
 function isFirebaseConfigured(): boolean {
   return !!(
@@ -11,24 +10,23 @@ function isFirebaseConfigured(): boolean {
   );
 }
 
-function getMessaging(): admin.messaging.Messaging | null {
+function getFcmMessaging(): Messaging | null {
   if (!isFirebaseConfigured()) {
     return null;
   }
 
-  if (!initialized) {
+  if (!getApps().length) {
     const privateKey = process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n");
-    admin.initializeApp({
-      credential: admin.credential.cert({
+    initializeApp({
+      credential: cert({
         projectId: process.env.FIREBASE_PROJECT_ID!,
         clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
         privateKey,
       }),
     });
-    initialized = true;
   }
 
-  return admin.messaging();
+  return getMessaging();
 }
 
 function isInvalidTokenError(error: unknown): boolean {
@@ -53,7 +51,7 @@ export async function sendFcmAlert({
   body: string;
   data: Record<string, string>;
 }): Promise<boolean> {
-  const messaging = getMessaging();
+  const messaging = getFcmMessaging();
   if (!messaging) {
     console.warn("Firebase not configured; skipping FCM");
     return false;
@@ -82,7 +80,7 @@ export async function sendFcmAlertsToUser(
   payload: { title: string; body: string; data: Record<string, string> }
 ): Promise<number> {
   try {
-    const messaging = getMessaging();
+    const messaging = getFcmMessaging();
     if (!messaging) {
       console.warn("Firebase not configured; skipping FCM");
       return 0;
