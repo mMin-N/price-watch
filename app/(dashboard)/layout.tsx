@@ -3,6 +3,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { SiteFooter } from "@/components/site-footer";
 import { ContextMenuGuard } from "@/components/context-menu-guard";
 import { ToastProvider } from "@/components/toast";
+import { Suspense } from "react";
 
 export default function DashboardLayout({
   children,
@@ -17,8 +18,10 @@ export default function DashboardLayout({
           {children}
         </main>
         <SiteFooter className="hidden lg:block" />
-        <MobileBottomNav />
       </ContextMenuGuard>
+      <Suspense fallback={null}>
+        <MobileBottomNav />
+      </Suspense>
     </ToastProvider>
   );
 }
