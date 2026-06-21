@@ -46,7 +46,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[100] border-t border-zinc-200 bg-white/95 backdrop-blur md:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
+      className="fixed inset-x-0 bottom-0 z-[200] flex border-t border-zinc-200 bg-white/95 backdrop-blur lg:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-user-chrome
       aria-label="Main navigation"

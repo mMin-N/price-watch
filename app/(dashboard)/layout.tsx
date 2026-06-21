@@ -13,10 +13,10 @@ export default function DashboardLayout({
     <ToastProvider>
       <DashboardNav />
       <ContextMenuGuard>
-        <main className="mx-auto max-w-6xl flex-1 px-4 py-6 pb-24 md:py-8 md:pb-8">
+        <main className="mx-auto max-w-6xl flex-1 px-4 py-6 pb-24 lg:py-8 lg:pb-8">
           {children}
         </main>
-        <SiteFooter className="hidden md:block" />
+        <SiteFooter className="hidden lg:block" />
         <MobileBottomNav />
       </ContextMenuGuard>
     </ToastProvider>
