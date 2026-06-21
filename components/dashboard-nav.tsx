@@ -66,7 +66,7 @@ export function DashboardNav() {
           </div>
         </div>
 
-        <nav className="-mx-4 flex items-center gap-4 overflow-x-auto border-t border-zinc-100 px-4 py-2 sm:mx-0 sm:gap-6 sm:border-t-0 sm:px-0 sm:py-0 sm:pb-3 dark:border-zinc-800">
+        <nav className="-mx-4 hidden items-center gap-4 overflow-x-auto border-t border-zinc-100 px-4 py-2 sm:mx-0 sm:gap-6 sm:border-t-0 sm:px-0 sm:py-0 sm:pb-3 md:flex dark:border-zinc-800">
           {navLinks.map(({ href, label }) => {
             const isActive =
               href === "/" ? pathname === "/" : pathname.startsWith(href);

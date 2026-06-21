@@ -12,7 +12,7 @@ import { useRouter } from "expo-router";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
 import {
   getStoredPushToken,
@@ -168,6 +168,29 @@ export default function SettingsScreen() {
           { backgroundColor: colors.surface, borderColor: colors.border },
         ]}
       >
+        <Text style={[styles.sectionTitle, { color: colors.muted }]}>
+          How tracking works
+        </Text>
+        <Text style={[styles.helpText, { color: colors.text }]}>
+          Prices refresh automatically every 6 hours (12 hours for eBay and Meesho).
+        </Text>
+        <Text style={[styles.helpText, { color: colors.text }]}>
+          Tracking pauses after 72 hours of account inactivity.
+        </Text>
+        <Text style={[styles.helpText, { color: colors.text }]}>
+          Auto-refresh may pause on a product after repeated fetch failures.
+        </Text>
+        <Text style={[styles.helpText, { color: colors.text }]}>
+          Supported sites: Amazon, Flipkart, Meesho, eBay, plus generic HTML fallback.
+        </Text>
+      </View>
+
+      <View
+        style={[
+          styles.section,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <Text style={[styles.sectionTitle, { color: colors.muted }]}>Legal</Text>
         <Pressable onPress={() => openLink("/privacy")} style={styles.linkRow}>
           <Text style={[styles.linkText, { color: colors.link }]}>Privacy policy</Text>
@@ -224,6 +247,10 @@ const styles = StyleSheet.create({
   },
   value: {
     fontSize: 16,
+  },
+  helpText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   secondaryButton: {
     marginTop: 4,

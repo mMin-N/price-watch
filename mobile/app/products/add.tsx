@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -9,11 +9,12 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { showToast } from "@/lib/toast";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { authStyles, zinc } from "@/app/(auth)/auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
 
 type ProductPreview = {
@@ -32,6 +33,12 @@ type ApiErrorBody = {
 
 type AddProductResponse = ApiErrorBody & {
   id?: string;
+};
+
+type WishlistItem = {
+  id: string;
+  name: string;
+  isDefault?: boolean;
 };
 
 function formatPrice(price: number, currency: string) {
@@ -62,6 +69,7 @@ function parseApiError(res: Response, data: ApiErrorBody): string {
 
 export default function AddProductScreen() {
   const router = useRouter();
+  const { wishlistId: fixedWishlistId } = useLocalSearchParams<{ wishlistId?: string }>();
   const colorScheme = useColorScheme() ?? "light";
   const colors = zinc[colorScheme];
 
@@ -71,6 +79,42 @@ export default function AddProductScreen() {
   const [error, setError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [targetPrice, setTargetPrice] = useState("");
+  const [discountAlertPercent, setDiscountAlertPercent] = useState("");
+  const [wishlistItemId, setWishlistItemId] = useState("");
+  const [wishlists, setWishlists] = useState<WishlistItem[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWishlists() {
+      try {
+        const res = await apiFetch("/api/wishlists");
+        if (!res.ok) return;
+        const data = (await res.json()) as { wishlists?: WishlistItem[] };
+        if (cancelled) return;
+        const list = data.wishlists ?? [];
+        setWishlists(list);
+        if (fixedWishlistId && list.some((w) => w.id === fixedWishlistId)) {
+          setWishlistItemId(fixedWishlistId);
+          return;
+        }
+        const defaultWishlist = list.find((w) => w.isDefault);
+        if (defaultWishlist) {
+          setWishlistItemId(defaultWishlist.id);
+        } else if (list[0]) {
+          setWishlistItemId(list[0].id);
+        }
+      } catch {
+        // optional
+      }
+    }
+
+    void loadWishlists();
+    return () => {
+      cancelled = true;
+    };
+  }, [fixedWishlistId]);
 
   function handleUrlChange(value: string) {
     setUrl(value);
@@ -145,10 +189,36 @@ export default function AddProductScreen() {
     setSubmitting(true);
     setError(null);
 
+    const body: Record<string, unknown> = { url: trimmedUrl };
+
+    if (targetPrice.trim()) {
+      const parsed = Number.parseFloat(targetPrice);
+      if (Number.isNaN(parsed) || parsed < 0) {
+        setError("Target price must be a valid number");
+        setSubmitting(false);
+        return;
+      }
+      body.targetPrice = parsed;
+    }
+
+    if (discountAlertPercent.trim()) {
+      const parsed = Number.parseFloat(discountAlertPercent);
+      if (Number.isNaN(parsed) || parsed <= 0 || parsed > 100) {
+        setError("Discount alert must be between 1 and 100");
+        setSubmitting(false);
+        return;
+      }
+      body.discountAlertPercent = parsed;
+    }
+
+    if (wishlistItemId) {
+      body.wishlistItemId = wishlistItemId;
+    }
+
     try {
       const res = await apiFetch("/api/products", {
         method: "POST",
-        body: JSON.stringify({ url: trimmedUrl }),
+        body: JSON.stringify(body),
       });
 
       let data: AddProductResponse = {};
@@ -166,11 +236,8 @@ export default function AddProductScreen() {
         return;
       }
 
-      if (data.id) {
-        router.replace(`/products/${data.id}`);
-      } else {
-        router.replace("/(tabs)");
-      }
+      showToast("Product added");
+      router.back();
     } catch {
       setError("Failed to add product. Check your connection and try again.");
     } finally {
@@ -263,6 +330,87 @@ export default function AddProductScreen() {
             <Text style={[styles.previewPrice, { color: colors.text }]}>
               {formatPrice(preview.price, preview.currency)}
             </Text>
+          </View>
+        ) : null}
+
+        {preview ? (
+          <View style={styles.alertFields}>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>
+              Target price USD (optional)
+            </Text>
+            <TextInput
+              value={targetPrice}
+              onChangeText={setTargetPrice}
+              placeholder="29.99"
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              style={[
+                styles.fieldInput,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  color: colors.text,
+                },
+              ]}
+            />
+
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>
+              Discount alert % (optional)
+            </Text>
+            <TextInput
+              value={discountAlertPercent}
+              onChangeText={setDiscountAlertPercent}
+              placeholder="20"
+              placeholderTextColor={colors.muted}
+              keyboardType="decimal-pad"
+              style={[
+                styles.fieldInput,
+                {
+                  borderColor: colors.border,
+                  backgroundColor: colors.surface,
+                  color: colors.text,
+                },
+              ]}
+            />
+
+            {wishlists.length > 0 && !fixedWishlistId ? (
+              <>
+                <Text style={[styles.fieldLabel, { color: colors.text }]}>
+                  Wishlist
+                </Text>
+                <View style={styles.wishlistRow}>
+                  {wishlists.map((wishlist) => (
+                    <Pressable
+                      key={wishlist.id}
+                      onPress={() => setWishlistItemId(wishlist.id)}
+                      style={[
+                        styles.wishlistChip,
+                        {
+                          borderColor: colors.border,
+                          backgroundColor:
+                            wishlistItemId === wishlist.id
+                              ? colors.primary
+                              : colors.surface,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={{
+                          color:
+                            wishlistItemId === wishlist.id
+                              ? colors.primaryText
+                              : colors.text,
+                          fontSize: 13,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {wishlist.name}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </>
+            ) : null}
           </View>
         ) : null}
 
@@ -366,6 +514,33 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     marginTop: 8,
+  },
+  alertFields: {
+    marginBottom: 16,
+    gap: 8,
+  },
+  fieldLabel: {
+    fontSize: 14,
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  fieldInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+  },
+  wishlistRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  wishlistChip: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   confirmButton: {
     marginTop: 8,

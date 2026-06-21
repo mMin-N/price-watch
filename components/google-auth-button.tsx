@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { isCapacitorNative } from "@/lib/capacitor";
+import { signInWithGoogleNative } from "@/lib/auth/native-oauth";
 
 export function GoogleAuthButton({ label = "Continue with Google" }: { label?: string }) {
   const [loading, setLoading] = useState(false);
@@ -10,6 +12,14 @@ export function GoogleAuthButton({ label = "Continue with Google" }: { label?: s
   async function handleGoogleSignIn() {
     setLoading(true);
     setError(null);
+
+    if (isCapacitorNative()) {
+      const nativeError = await signInWithGoogleNative();
+      setLoading(false);
+      if (nativeError) setError(nativeError);
+      return;
+    }
+
     const supabase = createClient();
     const redirectTo = `${window.location.origin}/auth/callback`;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({

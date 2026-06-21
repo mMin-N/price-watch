@@ -2,16 +2,31 @@ import { Pressable, StyleSheet, View } from "react-native";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import {
+  formatDistanceToTarget,
+  formatPriceChange,
+  formatRelativeTime,
+} from "@/lib/format-display";
+import { zinc } from "@/lib/auth-styles";
 
 export type ProductListItem = {
   id: string;
   url: string;
   title: string | null;
+  targetPrice: number | null;
+  discountAlertPercent: number | null;
+  baselinePrice: number | null;
   lastPrice: number | null;
+  lastFetchedAt: string | null;
   currency: string;
   siteName: string;
   alertActive: boolean;
+  autoRefreshPaused: boolean;
+  priceChange: number | null;
+  priceChangePercent: number | null;
+  distanceToTarget: number | null;
+  targetMet: boolean;
+  createdAt: string;
 };
 
 function formatPrice(price: number | null, currency: string) {
@@ -30,7 +45,25 @@ type ProductCardProps = {
 export function ProductCard({ product, onPress }: ProductCardProps) {
   const colorScheme = useColorScheme() ?? "light";
   const colors = zinc[colorScheme];
-  const displayTitle = product.title?.trim() || product.url;
+  const displayTitle = product.title?.trim() || "Untitled product";
+  const priceChange = formatPriceChange(
+    product.priceChange,
+    product.priceChangePercent,
+    product.currency
+  );
+  const distance = formatDistanceToTarget(
+    product.distanceToTarget,
+    product.currency
+  );
+
+  const changeColor =
+    priceChange?.direction === "down"
+      ? colorScheme === "dark"
+        ? "#34d399"
+        : "#047857"
+      : priceChange?.direction === "up"
+        ? colors.error
+        : colors.muted;
 
   return (
     <Pressable
@@ -44,13 +77,53 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
         },
       ]}
     >
-      <View style={styles.headerRow}>
+      {product.autoRefreshPaused && (
+        <Text
+          style={[
+            styles.pausedBanner,
+            { color: colorScheme === "dark" ? "#fcd34d" : "#b45309" },
+          ]}
+        >
+          Updates paused
+        </Text>
+      )}
+
+      <View style={styles.topRow}>
         <Text
           style={[styles.title, { color: colors.text }]}
           numberOfLines={2}
         >
           {displayTitle}
         </Text>
+        <Text style={[styles.price, { color: colors.text }]}>
+          {formatPrice(product.lastPrice, product.currency)}
+        </Text>
+      </View>
+
+      <View style={styles.metaRow}>
+        <View style={styles.changeRow}>
+          {priceChange ? (
+            <Text style={[styles.changeText, { color: changeColor }]}>
+              {priceChange.text}
+            </Text>
+          ) : null}
+          {distance ? (
+            <Text
+              style={[
+                styles.changeText,
+                {
+                  color: distance.met
+                    ? colorScheme === "dark"
+                      ? "#34d399"
+                      : "#047857"
+                    : colors.muted,
+                },
+              ]}
+            >
+              {distance.text}
+            </Text>
+          ) : null}
+        </View>
         {product.alertActive && (
           <View
             style={[
@@ -71,22 +144,13 @@ export function ProductCard({ product, onPress }: ProductCardProps) {
           </View>
         )}
       </View>
-      <View style={styles.metaRow}>
-        <View
-          style={[
-            styles.siteBadge,
-            {
-              backgroundColor: colors.background,
-              borderColor: colors.border,
-            },
-          ]}
-        >
-          <Text style={[styles.siteBadgeText, { color: colors.muted }]}>
-            {product.siteName}
-          </Text>
-        </View>
-        <Text style={[styles.price, { color: colors.text }]}>
-          {formatPrice(product.lastPrice, product.currency)}
+
+      <View style={styles.footerRow}>
+        <Text style={[styles.siteText, { color: colors.muted }]}>
+          {product.siteName}
+        </Text>
+        <Text style={[styles.timeText, { color: colors.muted }]}>
+          {formatRelativeTime(product.lastFetchedAt)}
         </Text>
       </View>
     </Pressable>
@@ -101,17 +165,43 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginBottom: 10,
   },
-  headerRow: {
+  pausedBanner: {
+    fontSize: 11,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  topRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 8,
-    marginBottom: 10,
+    gap: 12,
   },
   title: {
     flex: 1,
     fontSize: 16,
     fontWeight: "600",
     lineHeight: 22,
+  },
+  price: {
+    fontSize: 20,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+    marginTop: 8,
+  },
+  changeRow: {
+    flex: 1,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  changeText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
   alertBadge: {
     borderRadius: 6,
@@ -122,24 +212,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
   },
-  metaRow: {
+  footerRow: {
     flexDirection: "row",
-    alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    alignItems: "center",
+    marginTop: 10,
+    gap: 8,
   },
-  siteBadge: {
-    borderWidth: 1,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+  siteText: {
+    fontSize: 11,
+    opacity: 0.7,
+    flex: 1,
   },
-  siteBadgeText: {
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  price: {
-    fontSize: 16,
-    fontWeight: "600",
+  timeText: {
+    fontSize: 11,
   },
 });

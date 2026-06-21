@@ -11,7 +11,7 @@ import { Link } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { authStyles, zinc } from "./auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
 
 function extractSessionFromUrl(
   url: string

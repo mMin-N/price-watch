@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
 import { apiFetch } from "@/lib/api-client";
-import { authStyles, zinc } from "./auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
 import { supabase } from "@/lib/supabase";
 
 type ProfileResponse = {

@@ -12,7 +12,7 @@ import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Text } from "@/components/Themed";
 import { ProductCard, type ProductListItem } from "@/components/product-card";
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
 
 type WishlistDetailResponse = {
@@ -134,13 +134,28 @@ export default function WishlistDetailScreen() {
         contentContainerStyle={
           products.length === 0 ? styles.emptyList : styles.list
         }
+        ListHeaderComponent={
+          id ? (
+            <Pressable
+              onPress={() => router.push(`/products/add?wishlistId=${id}`)}
+              style={[
+                styles.addButton,
+                { backgroundColor: colors.primary, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.addButtonText, { color: colors.primaryText }]}>
+                Add product to this wishlist
+              </Text>
+            </Pressable>
+          ) : null
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No products in this wishlist
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Add products from the Products tab and assign them to this wishlist.
+              Tap Add above to track a product in this wishlist.
             </Text>
           </View>
         }
@@ -168,6 +183,18 @@ const styles = StyleSheet.create({
   list: {
     paddingTop: 12,
     paddingBottom: 24,
+  },
+  addButton: {
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  addButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   emptyList: {
     flexGrow: 1,

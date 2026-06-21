@@ -12,7 +12,7 @@ async function getOwnedWishlist(
 ) {
   const { data, error } = await supabase
     .from("wishlist_items")
-    .select("id, name, created_at, updated_at")
+    .select("id, name, is_default, created_at, updated_at")
     .eq("id", id)
     .eq("user_id", userId)
     .maybeSingle();
@@ -81,12 +81,16 @@ export async function PATCH(request: Request, context: RouteContext) {
     return jsonError(404, "Wishlist not found");
   }
 
+  if (wishlist.is_default) {
+    return jsonError(409, "Cannot rename the default wishlist");
+  }
+
   const { data, error } = await supabase
     .from("wishlist_items")
     .update({ name: name.trim(), updated_at: new Date().toISOString() })
     .eq("id", id)
     .eq("user_id", user.id)
-    .select("id, name, created_at, updated_at")
+    .select("id, name, is_default, created_at, updated_at")
     .single();
 
   if (error) {
@@ -119,6 +123,10 @@ export async function DELETE(request: Request, context: RouteContext) {
   }
   if (!wishlist) {
     return jsonError(404, "Wishlist not found");
+  }
+
+  if (wishlist.is_default) {
+    return jsonError(409, "Cannot delete the default wishlist");
   }
 
   const { error: unlinkError } = await supabase

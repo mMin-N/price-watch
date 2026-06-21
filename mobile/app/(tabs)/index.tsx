@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
@@ -11,9 +10,13 @@ import { useRouter } from "expo-router";
 
 import { Text } from "@/components/Themed";
 import { ProductCard, type ProductListItem } from "@/components/product-card";
+import { ProductCardSkeletonList } from "@/components/product-card-skeleton";
+import { SummaryBar } from "@/components/summary-bar";
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
+import { sortProductsByUrgency } from "@/lib/sort-products";
 
 type ProductsResponse = {
   products: ProductListItem[];
@@ -23,6 +26,7 @@ export default function ProductsScreen() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? "light";
   const colors = zinc[colorScheme];
+  const unreadCount = useUnreadNotificationCount();
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -42,7 +46,7 @@ export default function ProductsScreen() {
         throw new Error(`Failed to load products (${res.status})`);
       }
       const data = (await res.json()) as ProductsResponse;
-      setProducts(data.products ?? []);
+      setProducts(sortProductsByUrgency(data.products ?? []));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load products");
     } finally {
@@ -55,10 +59,15 @@ export default function ProductsScreen() {
     void loadProducts();
   }, [loadProducts]);
 
+  const priceDropCount = useMemo(
+    () => products.filter((product) => (product.priceChange ?? 0) < 0).length,
+    [products]
+  );
+
   if (loading && !refreshing) {
     return (
-      <View style={[styles.centered, { backgroundColor: colors.background }]}>
-        <ActivityIndicator color={colors.text} />
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <ProductCardSkeletonList />
       </View>
     );
   }
@@ -82,8 +91,15 @@ export default function ProductsScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {error ? (
-        <View style={[styles.errorBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Text style={[styles.errorBannerText, { color: colors.error }]}>{error}</Text>
+        <View
+          style={[
+            styles.errorBanner,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+        >
+          <Text style={[styles.errorBannerText, { color: colors.error }]}>
+            {error}
+          </Text>
         </View>
       ) : null}
       <FlatList
@@ -99,14 +115,28 @@ export default function ProductsScreen() {
         contentContainerStyle={
           products.length === 0 ? styles.emptyList : styles.list
         }
+        ListHeaderComponent={
+          <SummaryBar
+            priceDropCount={priceDropCount}
+            unreadCount={unreadCount}
+          />
+        }
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>
               No products yet
             </Text>
             <Text style={[styles.emptySubtitle, { color: colors.muted }]}>
-              Tap + to track your first product.
+              Paste a product link to start tracking prices.
             </Text>
+            <Pressable
+              onPress={() => router.push("/products/add")}
+              style={[styles.emptyCta, { backgroundColor: colors.primary }]}
+            >
+              <Text style={[styles.emptyCtaText, { color: colors.primaryText }]}>
+                Add product
+              </Text>
+            </Pressable>
           </View>
         }
         renderItem={({ item }) => (
@@ -131,12 +161,12 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   list: {
-    paddingTop: 12,
+    paddingTop: 4,
     paddingBottom: 24,
   },
   emptyList: {
     flexGrow: 1,
-    paddingTop: 12,
+    paddingTop: 4,
     paddingBottom: 24,
   },
   emptyState: {
@@ -156,6 +186,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     textAlign: "center",
     lineHeight: 22,
+    marginBottom: 20,
+  },
+  emptyCta: {
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+  },
+  emptyCtaText: {
+    fontSize: 15,
+    fontWeight: "600",
   },
   errorText: {
     fontSize: 15,

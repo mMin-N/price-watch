@@ -16,7 +16,7 @@ import { useNavigation, useRouter } from "expo-router";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { authStyles, zinc } from "@/app/(auth)/auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
 
 type WishlistItem = {

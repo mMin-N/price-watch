@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PriceChart } from "@/components/price-chart";
+import { useToast } from "@/components/toast";
+import { formatRelativeTime } from "@/lib/format/display";
 import type { Product } from "@/lib/types/product";
 
 type PriceHistoryEntry = {
@@ -50,7 +52,7 @@ export default function ProductDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   const loadProduct = useCallback(async () => {
     setError(null);
@@ -85,12 +87,20 @@ export default function ProductDetailPage() {
     loadProduct();
   }, [loadProduct]);
 
+  async function openProductUrl(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+
+  function setTargetFromCurrent(factor: number) {
+    if (product?.lastPrice === null || product?.lastPrice === undefined) return;
+    setTargetPriceInput((product.lastPrice * factor).toFixed(2));
+  }
+
   async function handleSaveAlerts() {
     if (!product) return;
 
     setSavingAlerts(true);
     setActionError(null);
-    setActionSuccess(null);
 
     const targetTrimmed = targetPriceInput.trim();
     const targetPrice =
@@ -145,7 +155,7 @@ export default function ProductDetailPage() {
       setDiscountAlertInput(
         data.discountAlertPercent !== null ? String(data.discountAlertPercent) : ""
       );
-      setActionSuccess("Alert settings saved");
+      showToast("Alert settings saved");
     } catch {
       setActionError("Failed to update alert settings");
     } finally {
@@ -236,20 +246,11 @@ export default function ProductDetailPage() {
         </p>
       ) : (
         <>
-          {(actionError || actionSuccess) && (
-            <div className="space-y-2">
-              {actionError && (
-                <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-                  {actionError}
-                </p>
-              )}
-              {actionSuccess && (
-                <p className="rounded border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700 dark:border-green-900 dark:bg-green-950 dark:text-green-300">
-                  {actionSuccess}
-                </p>
-              )}
-            </div>
-          )}
+          {actionError ? (
+            <p className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
+              {actionError}
+            </p>
+          ) : null}
 
           <section className="space-y-4 rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
             <div className="flex flex-wrap items-center gap-2">
@@ -270,48 +271,58 @@ export default function ProductDetailPage() {
 
             <div>
               <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                URL
-              </h2>
-              <a
-                href={product.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-1 block break-all text-sm text-zinc-600 hover:underline dark:text-zinc-400"
-              >
-                {product.url}
-              </a>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Last price
               </h2>
-              <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              <p className="mt-1 text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
                 {formatPrice(product.lastPrice, product.currency)}
               </p>
               {product.lastFetchedAt && (
                 <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  Updated {formatDate(product.lastFetchedAt)}
+                  Updated {formatRelativeTime(product.lastFetchedAt)}
                 </p>
               )}
             </div>
 
-            <div>
-              <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Baseline price
-              </h2>
-              <p className="mt-1 text-sm text-zinc-900 dark:text-zinc-50">
-                {formatPrice(product.baselinePrice, product.currency)}
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                Used to calculate discount % alerts
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => openProductUrl(product.url)}
+              className="text-sm font-medium text-zinc-700 underline hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-50"
+            >
+              Open in browser
+            </button>
 
             <div>
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Alert settings
               </p>
+              {product.lastPrice !== null && (
+                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                  Current price: {formatPrice(product.lastPrice, product.currency)}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTargetFromCurrent(0.9)}
+                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                >
+                  -10%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetFromCurrent(0.8)}
+                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                >
+                  -20%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTargetFromCurrent(1)}
+                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                >
+                  Set to current
+                </button>
+              </div>
               <div className="mt-2 grid gap-4 sm:grid-cols-2">
                 <div>
                   <label
@@ -349,6 +360,11 @@ export default function ProductDetailPage() {
                     placeholder="e.g. 20"
                     className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                   />
+                  {product.baselinePrice !== null && (
+                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                      Price when added: {formatPrice(product.baselinePrice, product.currency)}
+                    </p>
+                  )}
                 </div>
               </div>
               <button
@@ -374,12 +390,11 @@ export default function ProductDetailPage() {
                 {deleting ? "Deleting..." : "Stop tracking"}
               </button>
             </div>
-            <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Prices refresh automatically every 6 hours (12 hours for eBay and Meesho).
-              {product.autoRefreshPaused
-                ? " Auto-refresh is paused after repeated fetch failures."
-                : ""}
-            </p>
+            {product.autoRefreshPaused && (
+              <p className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                Updates paused after repeated fetch failures.
+              </p>
+            )}
           </section>
 
           <section className="space-y-4">

@@ -12,6 +12,7 @@ type ProductPreview = {
 };
 
 import { MAX_TRACKED_PRODUCTS_PER_USER } from "@/lib/tracking/tracking-policy";
+import { useToast } from "@/components/toast";
 
 type AddProductFormProps = {
   onSuccess: () => void;
@@ -45,6 +46,7 @@ export function AddProductForm({
   const [error, setError] = useState<string | null>(null);
   const [finding, setFinding] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +57,12 @@ export function AddProductForm({
         if (!res.ok) return;
         const data = (await res.json()) as { wishlists?: Wishlist[] };
         if (!cancelled) {
-          setWishlists(data.wishlists ?? []);
+          const list = data.wishlists ?? [];
+          setWishlists(list);
+          const defaultWishlist = list.find((w) => w.isDefault);
+          if (defaultWishlist && !fixedWishlistItemId) {
+            setWishlistItemId(defaultWishlist.id);
+          }
         }
       } catch {
         // ignore fetch errors for optional select
@@ -190,6 +197,7 @@ export function AddProductForm({
       if (!fixedWishlistItemId) {
         setWishlistItemId("");
       }
+      showToast("Product added");
       onSuccess();
     } catch {
       setError("Failed to add product");
@@ -317,7 +325,6 @@ export function AddProductForm({
                 onChange={(e) => setWishlistItemId(e.target.value)}
                 className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               >
-                <option value="">None</option>
                 {wishlists.map((wishlist) => (
                   <option key={wishlist.id} value={wishlist.id}>
                     {wishlist.name}

@@ -23,8 +23,35 @@ export type ProductRow = {
   updated_at: string;
 };
 
+function computePriceChange(lastPrice: number | null, baselinePrice: number | null) {
+  if (lastPrice === null || baselinePrice === null) {
+    return { priceChange: null, priceChangePercent: null };
+  }
+  const priceChange = lastPrice - baselinePrice;
+  const priceChangePercent =
+    baselinePrice > 0 ? (priceChange / baselinePrice) * 100 : null;
+  return { priceChange, priceChangePercent };
+}
+
+function computeDistanceToTarget(lastPrice: number | null, targetPrice: number | null) {
+  if (lastPrice === null || targetPrice === null) {
+    return { distanceToTarget: null, targetMet: false };
+  }
+  const distanceToTarget = lastPrice - targetPrice;
+  return { distanceToTarget, targetMet: lastPrice <= targetPrice };
+}
+
 export function mapProduct(row: ProductRow) {
   const site = detectSite(row.url);
+  const { priceChange, priceChangePercent } = computePriceChange(
+    row.last_price,
+    row.baseline_price
+  );
+  const { distanceToTarget, targetMet } = computeDistanceToTarget(
+    row.last_price,
+    row.target_price
+  );
+
   return {
     id: row.id,
     url: row.url,
@@ -42,6 +69,10 @@ export function mapProduct(row: ProductRow) {
     alertActive: computeAlertActive(row),
     consecutiveFailures: row.consecutive_failures ?? 0,
     autoRefreshPaused: isAutoRefreshPaused(row.consecutive_failures ?? 0),
+    priceChange,
+    priceChangePercent,
+    distanceToTarget,
+    targetMet,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

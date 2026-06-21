@@ -11,7 +11,7 @@ import { useNavigation, useRouter } from "expo-router";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { zinc } from "@/lib/auth-styles";
 import { apiFetch } from "@/lib/api-client";
 
 type Notification = {

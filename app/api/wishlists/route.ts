@@ -1,14 +1,22 @@
 import { NextResponse } from "next/server";
 import { requireUserFromRequest } from "@/lib/api/auth";
 import { jsonError } from "@/lib/api/errors";
+import { ensureDefaultWishlist } from "@/lib/wishlists/ensure-default-wishlist";
 
 export async function GET(request: Request) {
   const { supabase, user, response } = await requireUserFromRequest(request);
   if (response) return response;
 
+  try {
+    await ensureDefaultWishlist(supabase, user.id);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to ensure default wishlist";
+    return jsonError(500, message);
+  }
+
   const { data, error } = await supabase
     .from("wishlist_items")
-    .select("id, name, created_at, updated_at, tracked_products(count)")
+    .select("id, name, is_default, created_at, updated_at, tracked_products(count)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -19,6 +27,7 @@ export async function GET(request: Request) {
   const wishlists = (data ?? []).map((row) => ({
     id: row.id,
     name: row.name,
+    isDefault: row.is_default ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     productCount: row.tracked_products?.[0]?.count ?? 0,

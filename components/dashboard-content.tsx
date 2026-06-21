@@ -1,14 +1,18 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AddProductForm } from "@/components/add-product-form";
+import { ProductCardSkeletonList } from "@/components/product-card-skeleton";
 import { ProductList } from "@/components/product-list";
+import { SummaryBar } from "@/components/summary-bar";
+import { sortProductsByUrgency } from "@/lib/products/sort-products";
 import type { Product } from "@/lib/types/product";
 
 export function DashboardContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const loadProducts = useCallback(async () => {
     setError(null);
@@ -21,7 +25,7 @@ export function DashboardContent() {
         return;
       }
 
-      setProducts(data.products ?? []);
+      setProducts(sortProductsByUrgency(data.products ?? []));
     } catch {
       setError("Failed to load products");
     } finally {
@@ -29,9 +33,26 @@ export function DashboardContent() {
     }
   }, []);
 
+  const loadUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notifications?unreadOnly=true");
+      if (!res.ok) return;
+      const data = (await res.json()) as { notifications?: unknown[] };
+      setUnreadCount(data.notifications?.length ?? 0);
+    } catch {
+      // ignore badge fetch errors
+    }
+  }, []);
+
   useEffect(() => {
-    loadProducts();
-  }, [loadProducts]);
+    void loadProducts();
+    void loadUnreadCount();
+  }, [loadProducts, loadUnreadCount]);
+
+  const priceDropCount = useMemo(
+    () => products.filter((product) => (product.priceChange ?? 0) < 0).length,
+    [products]
+  );
 
   return (
     <div className="space-y-8">
@@ -45,14 +66,21 @@ export function DashboardContent() {
         </p>
       )}
 
+      {!loading && !error ? (
+        <SummaryBar priceDropCount={priceDropCount} unreadCount={unreadCount} />
+      ) : null}
+
       <AddProductForm
-        onSuccess={loadProducts}
+        onSuccess={() => {
+          void loadProducts();
+          void loadUnreadCount();
+        }}
         disabled={Boolean(error)}
         productCount={products.length}
       />
 
       {loading ? (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading products...</p>
+        <ProductCardSkeletonList />
       ) : error ? null : (
         <ProductList products={products} onRefresh={loadProducts} />
       )}

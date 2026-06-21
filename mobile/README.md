@@ -1,5 +1,8 @@
 # Price Watch Mobile (Android v1)
 
+> **New:** Android is moving to a **Capacitor web shell** in [`capacitor-app/`](../capacitor-app/README.md).  
+> The Expo app below is legacy; use Capacitor for new Android work.
+
 Expo app for Price Watch Android v1. Uses a **dev client** (not Expo Go) for FCM push and native modules.
 
 ## Prerequisites

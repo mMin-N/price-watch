@@ -5,12 +5,14 @@ import { Pressable, View } from "react-native";
 import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
+import { zinc } from "@/lib/auth-styles";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme() ?? "light";
   const colors = zinc[colorScheme];
   const router = useRouter();
+  const unreadCount = useUnreadNotificationCount();
 
   return (
     <Tabs
@@ -107,6 +109,7 @@ export default function TabLayout() {
         name="notifications"
         options={{
           title: "Notifications",
+          tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{

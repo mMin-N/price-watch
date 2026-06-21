@@ -11,7 +11,7 @@ import {
 import { Link, useRouter } from "expo-router";
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { authStyles, zinc } from "./auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
 import { supabase } from "@/lib/supabase";
 
 export default function RegisterScreen() {

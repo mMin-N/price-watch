@@ -17,7 +17,9 @@ import { LineChart } from "react-native-gifted-charts";
 
 import { Text } from "@/components/Themed";
 import { useColorScheme } from "@/components/useColorScheme";
-import { authStyles, zinc } from "@/app/(auth)/auth-styles";
+import { authStyles, zinc } from "@/lib/auth-styles";
+import { formatRelativeTime } from "@/lib/format-display";
+import { showToast } from "@/lib/toast";
 import { apiFetch } from "@/lib/api-client";
 
 type AvailabilityStatus = "in_stock" | "out_of_stock" | "unknown";
@@ -36,8 +38,10 @@ type ProductDetail = {
   title: string | null;
   targetPrice: number | null;
   discountAlertPercent: number | null;
+  baselinePrice: number | null;
   currency: string;
   lastPrice: number | null;
+  lastFetchedAt: string | null;
   siteName: string;
   availabilityStatus: AvailabilityStatus;
   alertActive: boolean;
@@ -74,7 +78,6 @@ export default function ProductDetailScreen() {
   const [savingAlerts, setSavingAlerts] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const loadProduct = useCallback(async () => {
     if (!id) return;
@@ -134,7 +137,6 @@ export default function ProductDetailScreen() {
 
     setSavingAlerts(true);
     setActionError(null);
-    setActionSuccess(null);
 
     const targetTrimmed = targetPriceInput.trim();
     const targetPrice =
@@ -190,7 +192,7 @@ export default function ProductDetailScreen() {
           ? String(data.discountAlertPercent)
           : ""
       );
-      setActionSuccess("Alert settings saved");
+      showToast("Alert settings saved");
     } catch {
       setActionError("Failed to update alert settings");
     } finally {
@@ -241,6 +243,11 @@ export default function ProductDetailScreen() {
 
   async function openUrl(url: string) {
     await WebBrowser.openBrowserAsync(url);
+  }
+
+  function setTargetFromCurrent(factor: number) {
+    if (product?.lastPrice === null || product?.lastPrice === undefined) return;
+    setTargetPriceInput((product.lastPrice * factor).toFixed(2));
   }
 
   if (loading) {
@@ -341,17 +348,18 @@ export default function ProductDetailScreen() {
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
         >
-          <Text style={[styles.sectionLabel, { color: colors.muted }]}>URL</Text>
-          <Pressable onPress={() => void openUrl(product.url)}>
-            <Text style={[styles.url, { color: colors.link }]}>{product.url}</Text>
-          </Pressable>
-
-          <Text style={[styles.sectionLabel, styles.sectionSpacing, { color: colors.muted }]}>
-            Last price
-          </Text>
+          <Text style={[styles.sectionLabel, { color: colors.muted }]}>Last price</Text>
           <Text style={[styles.lastPrice, { color: colors.text }]}>
             {formatPrice(product.lastPrice, product.currency)}
           </Text>
+          <Text style={[styles.updatedAt, { color: colors.muted }]}>
+            Updated {formatRelativeTime(product.lastFetchedAt)}
+          </Text>
+          <Pressable onPress={() => void openUrl(product.url)} style={styles.openBrowser}>
+            <Text style={[styles.openBrowserText, { color: colors.link }]}>
+              Open in browser
+            </Text>
+          </Pressable>
         </View>
 
         <View
@@ -406,6 +414,28 @@ export default function ProductDetailScreen() {
             Notify when either condition is met
           </Text>
 
+          {product.lastPrice !== null && (
+            <Text style={[styles.currentPriceRef, { color: colors.muted }]}>
+              Current price: {formatPrice(product.lastPrice, product.currency)}
+            </Text>
+          )}
+
+          <View style={styles.chipRow}>
+            {(["-10%", "-20%", "Set to current"] as const).map((label) => (
+              <Pressable
+                key={label}
+                onPress={() =>
+                  setTargetFromCurrent(
+                    label === "-10%" ? 0.9 : label === "-20%" ? 0.8 : 1
+                  )
+                }
+                style={[styles.chip, { borderColor: colors.border }]}
+              >
+                <Text style={[styles.chipText, { color: colors.text }]}>{label}</Text>
+              </Pressable>
+            ))}
+          </View>
+
           <Text style={[styles.fieldLabel, { color: colors.muted }]}>
             Target price USD
           </Text>
@@ -444,19 +474,15 @@ export default function ProductDetailScreen() {
             ]}
           />
 
+          {product.baselinePrice !== null && (
+            <Text style={[styles.baselineHint, { color: colors.muted }]}>
+              Price when added: {formatPrice(product.baselinePrice, product.currency)}
+            </Text>
+          )}
+
           {actionError ? (
             <Text style={[authStyles.error, { color: colors.error }]}>
               {actionError}
-            </Text>
-          ) : null}
-          {actionSuccess ? (
-            <Text
-              style={[
-                styles.successText,
-                { color: colorScheme === "dark" ? "#86efac" : "#166534" },
-              ]}
-            >
-              {actionSuccess}
             </Text>
           ) : null}
 
@@ -579,9 +605,45 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
   },
   lastPrice: {
-    fontSize: 22,
-    fontWeight: "600",
+    fontSize: 28,
+    fontWeight: "700",
     marginTop: 4,
+  },
+  updatedAt: {
+    fontSize: 12,
+    marginTop: 6,
+  },
+  openBrowser: {
+    marginTop: 12,
+  },
+  openBrowserText: {
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  currentPriceRef: {
+    fontSize: 14,
+    marginBottom: 8,
+  },
+  chipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  baselineHint: {
+    fontSize: 12,
+    marginBottom: 12,
+    marginTop: -4,
   },
   emptyChart: {
     fontSize: 14,

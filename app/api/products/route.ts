@@ -19,6 +19,7 @@ import {
 import { rollbackInsertedProduct } from "@/lib/supabase/delete-owned-row";
 import { MAX_TRACKED_PRODUCTS_PER_USER } from "@/lib/tracking/tracking-policy";
 import { touchUserActivity } from "@/lib/tracking/touch-user-activity";
+import { ensureDefaultWishlist } from "@/lib/wishlists/ensure-default-wishlist";
 
 export async function GET(request: Request) {
   const { supabase, user, response } = await requireUserFromRequest(request);
@@ -87,19 +88,34 @@ export async function POST(request: Request) {
     return jsonError(400, "wishlistItemId must be a string");
   }
 
-  let wishlistError: string | null;
-  try {
-    wishlistError = await validateOwnedWishlistItem(
-      supabase,
-      user.id,
-      wishlistItemId as string | null | undefined
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to validate wishlist";
-    return jsonError(500, message);
-  }
-  if (wishlistError) {
-    return jsonError(400, wishlistError);
+  const trimmedWishlistId =
+    typeof wishlistItemId === "string" ? wishlistItemId.trim() : "";
+
+  let resolvedWishlistId: string;
+  if (trimmedWishlistId) {
+    let wishlistError: string | null;
+    try {
+      wishlistError = await validateOwnedWishlistItem(
+        supabase,
+        user.id,
+        trimmedWishlistId
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to validate wishlist";
+      return jsonError(500, message);
+    }
+    if (wishlistError) {
+      return jsonError(400, wishlistError);
+    }
+    resolvedWishlistId = trimmedWishlistId;
+  } else {
+    try {
+      resolvedWishlistId = (await ensureDefaultWishlist(supabase, user.id)).id;
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Failed to resolve default wishlist";
+      return jsonError(500, message);
+    }
   }
 
   let duplicate;
@@ -145,7 +161,7 @@ export async function POST(request: Request) {
       target_price: targetPrice,
       discount_alert_percent: discountAlertPercent,
       baseline_price: fetchResult.price,
-      wishlist_item_id: (wishlistItemId as string | null | undefined) ?? null,
+      wishlist_item_id: resolvedWishlistId,
       currency: APP_CURRENCY,
     })
     .select(PRODUCT_COLUMNS)

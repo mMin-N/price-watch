@@ -6,6 +6,7 @@ import type { Session } from "@supabase/supabase-js";
 import "react-native-reanimated";
 
 import { useColorScheme } from "@/components/useColorScheme";
+import { ToastHost } from "@/components/toast-host";
 import { apiFetch } from "@/lib/api-client";
 import {
   registerForPushNotifications,
@@ -127,6 +128,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
         emailVerified={emailVerified}
         isLoading={isLoading}
       />
+      <ToastHost />
       {children}
     </>
   );

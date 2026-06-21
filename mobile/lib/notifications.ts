@@ -43,8 +43,14 @@ export async function registerForPushNotifications(): Promise<string | null> {
     });
   }
 
-  const tokenResult = await Notifications.getDevicePushTokenAsync();
-  const fcmToken = tokenResult.data;
+  let fcmToken: string;
+  try {
+    const tokenResult = await Notifications.getDevicePushTokenAsync();
+    fcmToken = tokenResult.data;
+  } catch (error) {
+    console.warn("FCM not available:", error);
+    return null;
+  }
 
   const res = await apiFetch("/api/devices/register", {
     method: "POST",

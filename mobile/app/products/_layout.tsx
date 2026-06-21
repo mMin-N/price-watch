@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 
 import { useColorScheme } from "@/components/useColorScheme";
-import { zinc } from "@/app/(auth)/auth-styles";
+import { zinc } from "@/lib/auth-styles";
 
 export default function ProductsLayout() {
   const colorScheme = useColorScheme() ?? "light";

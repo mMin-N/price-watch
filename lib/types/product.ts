@@ -19,6 +19,10 @@ export type Product = {
   alertActive: boolean;
   consecutiveFailures: number;
   autoRefreshPaused: boolean;
+  priceChange: number | null;
+  priceChangePercent: number | null;
+  distanceToTarget: number | null;
+  targetMet: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -26,6 +30,7 @@ export type Product = {
 export type Wishlist = {
   id: string;
   name: string;
+  isDefault?: boolean;
   createdAt: string;
   updatedAt: string;
   productCount: number;
