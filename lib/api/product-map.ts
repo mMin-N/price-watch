@@ -4,12 +4,13 @@ import { computeAlertActive, type AvailabilityStatus } from "@/lib/alert/compute
 import { isAutoRefreshPaused } from "@/lib/tracking/tracking-policy";
 
 export const PRODUCT_COLUMNS =
-  "id, url, title, target_price, discount_alert_percent, baseline_price, currency, last_price, last_fetched_at, wishlist_item_id, availability_status, consecutive_failures, created_at, updated_at";
+  "id, url, title, image_url, target_price, discount_alert_percent, baseline_price, currency, last_price, last_fetched_at, wishlist_item_id, availability_status, consecutive_failures, created_at, updated_at";
 
 export type ProductRow = {
   id: string;
   url: string;
   title: string | null;
+  image_url: string | null;
   target_price: number | null;
   discount_alert_percent: number | null;
   baseline_price: number | null;
@@ -56,6 +57,7 @@ export function mapProduct(row: ProductRow) {
     id: row.id,
     url: row.url,
     title: row.title,
+    imageUrl: row.image_url,
     targetPrice: row.target_price,
     discountAlertPercent: row.discount_alert_percent,
     baselinePrice: row.baseline_price,

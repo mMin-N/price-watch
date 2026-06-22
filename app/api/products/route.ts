@@ -6,7 +6,6 @@ import { productFetchErrorResponse } from "@/lib/api/product-fetch-errors";
 import { mapProduct, PRODUCT_COLUMNS } from "@/lib/api/product-map";
 import {
   parseDiscountAlertPercent,
-  parseOptionalPrice,
   validateOwnedWishlistItem,
 } from "@/lib/api/validate-product-input";
 import { APP_CURRENCY } from "@/lib/providers/normalize-price";
@@ -55,7 +54,6 @@ export async function POST(request: Request) {
   }
 
   const url = body?.url;
-  const targetPrice = parseOptionalPrice(body?.targetPrice);
   const discountAlertPercent = parseDiscountAlertPercent(body?.discountAlertPercent);
   const wishlistItemId = body?.wishlistItemId;
 
@@ -70,10 +68,6 @@ export async function POST(request: Request) {
     new URL(trimmedUrl);
   } catch {
     return jsonError(400, "Invalid URL");
-  }
-
-  if (targetPrice === "invalid") {
-    return jsonError(400, "targetPrice must be a non-negative finite number");
   }
 
   if (discountAlertPercent === "invalid") {
@@ -158,7 +152,8 @@ export async function POST(request: Request) {
       user_id: user.id,
       url: storedUrl,
       title: fetchResult.title?.trim() || null,
-      target_price: targetPrice,
+      image_url: fetchResult.imageUrl?.trim() || null,
+      target_price: null,
       discount_alert_percent: discountAlertPercent,
       baseline_price: fetchResult.price,
       wishlist_item_id: resolvedWishlistId,

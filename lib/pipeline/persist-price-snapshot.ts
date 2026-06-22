@@ -80,25 +80,18 @@ async function persistPriceSnapshotLocked(
 
   const evaluation = skipAlerts
     ? { triggered: false, reason: null, discountPercent: null }
-    : evaluateAlert(
-        price,
-        product.target_price,
-        product.discount_alert_percent,
-        baselinePrice
-      );
+    : evaluateAlert(price, product.discount_alert_percent, baselinePrice);
 
   const alertState = skipAlerts
     ? {
-        targetPriceAlertActive: product.target_price_alert_active,
+        targetPriceAlertActive: false,
         discountAlertActive: product.discount_alert_active,
         shouldNotify: false,
       }
     : resolveAlertActiveState(
         price,
-        product.target_price,
         product.discount_alert_percent,
         baselinePrice,
-        product.target_price_alert_active,
         product.discount_alert_active,
         evaluation
       );
@@ -144,8 +137,6 @@ async function persistPriceSnapshotLocked(
   const message = buildAlertMessage({
     currency,
     price,
-    reason: evaluation.reason,
-    targetPrice: product.target_price,
     discountPercent: evaluation.discountPercent,
     discountAlertPercent: product.discount_alert_percent,
     baselinePrice,
@@ -165,8 +156,7 @@ async function persistPriceSnapshotLocked(
     throw new Error(notificationError?.message ?? "Failed to insert notification");
   }
 
-  const subjectReason =
-    evaluation.reason === "discount_percent" ? "Discount alert" : "Target price reached";
+  const subjectReason = "Price drop";
   const fcmPromise = sendFcmAlertsToUser(product.user_id, {
     title: `[Price Watch] ${subjectReason}`,
     body: message,

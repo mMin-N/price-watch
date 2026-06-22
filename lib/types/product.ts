@@ -6,6 +6,7 @@ export type Product = {
   id: string;
   url: string;
   title: string | null;
+  imageUrl: string | null;
   targetPrice: number | null;
   discountAlertPercent: number | null;
   baselinePrice: number | null;

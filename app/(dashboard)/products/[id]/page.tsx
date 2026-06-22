@@ -46,8 +46,8 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [targetPriceInput, setTargetPriceInput] = useState("");
   const [discountAlertInput, setDiscountAlertInput] = useState("");
+  const [showAdvancedAlerts, setShowAdvancedAlerts] = useState(false);
   const [savingAlerts, setSavingAlerts] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loadingMoreHistory, setLoadingMoreHistory] = useState(false);
@@ -69,12 +69,10 @@ export default function ProductDetailPage() {
       }
 
       setProduct(data);
-      setTargetPriceInput(
-        data.targetPrice !== null ? String(data.targetPrice) : ""
-      );
       setDiscountAlertInput(
         data.discountAlertPercent !== null ? String(data.discountAlertPercent) : ""
       );
+      setShowAdvancedAlerts(data.discountAlertPercent !== null);
     } catch {
       setError("Failed to load product");
       setProduct(null);
@@ -91,26 +89,11 @@ export default function ProductDetailPage() {
     window.open(url, "_blank", "noopener,noreferrer");
   }
 
-  function setTargetFromCurrent(factor: number) {
-    if (product?.lastPrice === null || product?.lastPrice === undefined) return;
-    setTargetPriceInput((product.lastPrice * factor).toFixed(2));
-  }
-
   async function handleSaveAlerts() {
     if (!product) return;
 
     setSavingAlerts(true);
     setActionError(null);
-
-    const targetTrimmed = targetPriceInput.trim();
-    const targetPrice =
-      targetTrimmed === "" ? null : Number.parseFloat(targetTrimmed);
-
-    if (targetTrimmed !== "" && (Number.isNaN(targetPrice) || targetPrice! < 0)) {
-      setActionError("Target price must be a non-negative number");
-      setSavingAlerts(false);
-      return;
-    }
 
     const discountTrimmed = discountAlertInput.trim();
     const discountAlertPercent =
@@ -122,7 +105,7 @@ export default function ProductDetailPage() {
         discountAlertPercent! <= 0 ||
         discountAlertPercent! > 100)
     ) {
-      setActionError("Discount alert must be between 1 and 100");
+      setActionError("Minimum discount must be between 1 and 100");
       setSavingAlerts(false);
       return;
     }
@@ -131,7 +114,7 @@ export default function ProductDetailPage() {
       const res = await fetch(`/api/products/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetPrice, discountAlertPercent }),
+        body: JSON.stringify({ discountAlertPercent }),
       });
       const data = (await res.json()) as Product & { error?: string };
 
@@ -144,13 +127,9 @@ export default function ProductDetailPage() {
         prev
           ? {
               ...prev,
-              targetPrice: data.targetPrice,
               discountAlertPercent: data.discountAlertPercent,
             }
           : prev
-      );
-      setTargetPriceInput(
-        data.targetPrice !== null ? String(data.targetPrice) : ""
       );
       setDiscountAlertInput(
         data.discountAlertPercent !== null ? String(data.discountAlertPercent) : ""
@@ -269,6 +248,22 @@ export default function ProductDetailPage() {
               )}
             </div>
 
+            {product.imageUrl ? (
+              <a
+                href={product.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block overflow-hidden rounded-lg"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={product.imageUrl}
+                  alt={product.title ?? "Product"}
+                  className="max-h-80 w-full object-contain"
+                />
+              </a>
+            ) : null}
+
             <div>
               <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Last price
@@ -293,61 +288,32 @@ export default function ProductDetailPage() {
 
             <div>
               <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                Alert settings
+                Price drop alerts
               </p>
-              {product.lastPrice !== null && (
-                <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                  Current price: {formatPrice(product.lastPrice, product.currency)}
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                You&apos;ll be notified when the price drops from the price when added.
+              </p>
+              {product.baselinePrice !== null && (
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  Price when added: {formatPrice(product.baselinePrice, product.currency)}
                 </p>
               )}
-              <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTargetFromCurrent(0.9)}
-                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-                >
-                  -10%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTargetFromCurrent(0.8)}
-                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-                >
-                  -20%
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTargetFromCurrent(1)}
-                  className="rounded-full border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
-                >
-                  Set to current
-                </button>
-              </div>
-              <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    htmlFor="target-price"
-                    className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
-                  >
-                    Target price USD
-                  </label>
-                  <input
-                    id="target-price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={targetPriceInput}
-                    onChange={(e) => setTargetPriceInput(e.target.value)}
-                    placeholder="No target"
-                    className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
-                  />
-                </div>
-                <div>
+
+              <button
+                type="button"
+                onClick={() => setShowAdvancedAlerts((value) => !value)}
+                className="mt-3 text-xs text-zinc-500 underline hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+              >
+                {showAdvancedAlerts ? "Hide" : "Set minimum discount %"}
+              </button>
+
+              {showAdvancedAlerts ? (
+                <div className="mt-2">
                   <label
                     htmlFor="discount-alert"
                     className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
                   >
-                    Discount alert %
+                    Minimum discount %
                   </label>
                   <input
                     id="discount-alert"
@@ -357,27 +323,22 @@ export default function ProductDetailPage() {
                     step="0.1"
                     value={discountAlertInput}
                     onChange={(e) => setDiscountAlertInput(e.target.value)}
-                    placeholder="e.g. 20"
+                    placeholder="Any drop"
                     className="mt-1 w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
                   />
-                  {product.baselinePrice !== null && (
-                    <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                      Price when added: {formatPrice(product.baselinePrice, product.currency)}
-                    </p>
-                  )}
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    Leave empty for any price drop. Set a value to require at least that % off.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSaveAlerts}
+                    disabled={savingAlerts}
+                    className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                  >
+                    {savingAlerts ? "Saving..." : "Save"}
+                  </button>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={handleSaveAlerts}
-                disabled={savingAlerts}
-                className="mt-3 rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
-              >
-                {savingAlerts ? "Saving..." : "Save alerts"}
-              </button>
-              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-                Notify when either condition is met
-              </p>
+              ) : null}
             </div>
 
             <div className="flex flex-wrap gap-2">

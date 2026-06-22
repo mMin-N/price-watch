@@ -44,7 +44,7 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
           No products yet
         </p>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Paste a product link above to start tracking prices.
+          Tap &quot;Add Product&quot; above to paste a link and start tracking prices.
         </p>
       </div>
     );
@@ -58,7 +58,7 @@ export function ProductList({ products, onRefresh }: ProductListProps) {
         </p>
       )}
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
         {products.map((product) => (
           <ProductCard
             key={product.id}

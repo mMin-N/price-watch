@@ -8,23 +8,23 @@ describe("computeDiscountPercent", () => {
 });
 
 describe("evaluateAlert", () => {
-  it("returns false when no alert rules are set", () => {
-    expect(evaluateAlert(80, null, null, 100)).toEqual({
+  it("returns false when baseline is missing", () => {
+    expect(evaluateAlert(80, null, null)).toEqual({
       triggered: false,
       reason: null,
       discountPercent: null,
     });
   });
 
-  it("triggers on target price", () => {
-    expect(evaluateAlert(9.99, 10, null, 100)).toMatchObject({
+  it("triggers on any drop when no minimum threshold is set", () => {
+    expect(evaluateAlert(99, null, 100)).toMatchObject({
       triggered: true,
-      reason: "target_price",
+      reason: "discount_percent",
     });
   });
 
-  it("triggers on discount percent", () => {
-    expect(evaluateAlert(75, null, 20, 100)).toMatchObject({
+  it("triggers when discount meets threshold", () => {
+    expect(evaluateAlert(75, 20, 100)).toMatchObject({
       triggered: true,
       reason: "discount_percent",
       discountPercent: 25,
@@ -32,14 +32,11 @@ describe("evaluateAlert", () => {
   });
 
   it("does not trigger when discount is below threshold", () => {
-    expect(evaluateAlert(85, null, 20, 100).triggered).toBe(false);
+    expect(evaluateAlert(85, 20, 100).triggered).toBe(false);
   });
 
-  it("does not trigger when discount alert percent is zero", () => {
-    expect(evaluateAlert(50, null, 0, 100).triggered).toBe(false);
-  });
-
-  it("target price takes precedence when both match", () => {
-    expect(evaluateAlert(50, 60, 10, 100).reason).toBe("target_price");
+  it("does not trigger when price is unchanged or higher", () => {
+    expect(evaluateAlert(100, null, 100).triggered).toBe(false);
+    expect(evaluateAlert(110, null, 100).triggered).toBe(false);
   });
 });

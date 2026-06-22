@@ -73,8 +73,8 @@ export default function ProductDetailScreen() {
   const [product, setProduct] = useState<ProductDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [targetPriceInput, setTargetPriceInput] = useState("");
   const [discountAlertInput, setDiscountAlertInput] = useState("");
+  const [showAdvancedAlerts, setShowAdvancedAlerts] = useState(false);
   const [savingAlerts, setSavingAlerts] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -96,14 +96,12 @@ export default function ProductDetailScreen() {
       }
 
       setProduct(data);
-      setTargetPriceInput(
-        data.targetPrice !== null ? String(data.targetPrice) : ""
-      );
       setDiscountAlertInput(
         data.discountAlertPercent !== null
           ? String(data.discountAlertPercent)
           : ""
       );
+      setShowAdvancedAlerts(data.discountAlertPercent !== null);
     } catch {
       setError("Failed to load product");
       setProduct(null);
@@ -138,16 +136,6 @@ export default function ProductDetailScreen() {
     setSavingAlerts(true);
     setActionError(null);
 
-    const targetTrimmed = targetPriceInput.trim();
-    const targetPrice =
-      targetTrimmed === "" ? null : Number.parseFloat(targetTrimmed);
-
-    if (targetTrimmed !== "" && (Number.isNaN(targetPrice) || targetPrice! < 0)) {
-      setActionError("Target price must be a non-negative number");
-      setSavingAlerts(false);
-      return;
-    }
-
     const discountTrimmed = discountAlertInput.trim();
     const discountAlertPercent =
       discountTrimmed === "" ? null : Number.parseFloat(discountTrimmed);
@@ -158,7 +146,7 @@ export default function ProductDetailScreen() {
         discountAlertPercent! <= 0 ||
         discountAlertPercent! > 100)
     ) {
-      setActionError("Discount alert must be between 1 and 100");
+      setActionError("Minimum discount must be between 1 and 100");
       setSavingAlerts(false);
       return;
     }
@@ -166,7 +154,7 @@ export default function ProductDetailScreen() {
     try {
       const res = await apiFetch(`/api/products/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ targetPrice, discountAlertPercent }),
+        body: JSON.stringify({ discountAlertPercent }),
       });
       const data = (await res.json()) as ProductDetail & { error?: string };
 
@@ -179,13 +167,9 @@ export default function ProductDetailScreen() {
         prev
           ? {
               ...prev,
-              targetPrice: data.targetPrice,
               discountAlertPercent: data.discountAlertPercent,
             }
           : prev
-      );
-      setTargetPriceInput(
-        data.targetPrice !== null ? String(data.targetPrice) : ""
       );
       setDiscountAlertInput(
         data.discountAlertPercent !== null
@@ -243,11 +227,6 @@ export default function ProductDetailScreen() {
 
   async function openUrl(url: string) {
     await WebBrowser.openBrowserAsync(url);
-  }
-
-  function setTargetFromCurrent(factor: number) {
-    if (product?.lastPrice === null || product?.lastPrice === undefined) return;
-    setTargetPriceInput((product.lastPrice * factor).toFixed(2));
   }
 
   if (loading) {
@@ -408,71 +387,11 @@ export default function ProductDetailScreen() {
           ]}
         >
           <Text style={[styles.sectionHeading, { color: colors.text }]}>
-            Alert settings
+            Price drop alerts
           </Text>
           <Text style={[styles.hint, { color: colors.muted }]}>
-            Notify when either condition is met
+            You&apos;ll be notified when the price drops from the price when added.
           </Text>
-
-          {product.lastPrice !== null && (
-            <Text style={[styles.currentPriceRef, { color: colors.muted }]}>
-              Current price: {formatPrice(product.lastPrice, product.currency)}
-            </Text>
-          )}
-
-          <View style={styles.chipRow}>
-            {(["-10%", "-20%", "Set to current"] as const).map((label) => (
-              <Pressable
-                key={label}
-                onPress={() =>
-                  setTargetFromCurrent(
-                    label === "-10%" ? 0.9 : label === "-20%" ? 0.8 : 1
-                  )
-                }
-                style={[styles.chip, { borderColor: colors.border }]}
-              >
-                <Text style={[styles.chipText, { color: colors.text }]}>{label}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-            Target price USD
-          </Text>
-          <TextInput
-            value={targetPriceInput}
-            onChangeText={setTargetPriceInput}
-            placeholder="No target"
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            style={[
-              styles.input,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-                color: colors.text,
-              },
-            ]}
-          />
-
-          <Text style={[styles.fieldLabel, { color: colors.muted }]}>
-            Discount alert %
-          </Text>
-          <TextInput
-            value={discountAlertInput}
-            onChangeText={setDiscountAlertInput}
-            placeholder="e.g. 20"
-            placeholderTextColor={colors.muted}
-            keyboardType="decimal-pad"
-            style={[
-              styles.input,
-              {
-                borderColor: colors.border,
-                backgroundColor: colors.background,
-                color: colors.text,
-              },
-            ]}
-          />
 
           {product.baselinePrice !== null && (
             <Text style={[styles.baselineHint, { color: colors.muted }]}>
@@ -480,33 +399,64 @@ export default function ProductDetailScreen() {
             </Text>
           )}
 
+          <Pressable onPress={() => setShowAdvancedAlerts((value) => !value)}>
+            <Text style={[styles.advancedLink, { color: colors.muted }]}>
+              {showAdvancedAlerts ? "Hide minimum discount %" : "Set minimum discount %"}
+            </Text>
+          </Pressable>
+
+          {showAdvancedAlerts ? (
+            <>
+              <TextInput
+                value={discountAlertInput}
+                onChangeText={setDiscountAlertInput}
+                placeholder="Any drop"
+                placeholderTextColor={colors.muted}
+                keyboardType="decimal-pad"
+                style={[
+                  styles.input,
+                  {
+                    borderColor: colors.border,
+                    backgroundColor: colors.background,
+                    color: colors.text,
+                  },
+                ]}
+              />
+              <Text style={[styles.baselineHint, { color: colors.muted }]}>
+                Leave empty for any drop. Set a value to require at least that % off.
+              </Text>
+            </>
+          ) : null}
+
           {actionError ? (
             <Text style={[authStyles.error, { color: colors.error }]}>
               {actionError}
             </Text>
           ) : null}
 
-          <Pressable
-            onPress={() => void handleSaveAlerts()}
-            disabled={savingAlerts}
-            style={({ pressed }) => [
-              authStyles.button,
-              {
-                backgroundColor: colors.primary,
-                opacity: pressed || savingAlerts ? 0.5 : 1,
-              },
-            ]}
-          >
-            {savingAlerts ? (
-              <ActivityIndicator color={colors.primaryText} />
-            ) : (
-              <Text
-                style={[authStyles.buttonText, { color: colors.primaryText }]}
-              >
-                Save alerts
-              </Text>
-            )}
-          </Pressable>
+          {showAdvancedAlerts ? (
+            <Pressable
+              onPress={() => void handleSaveAlerts()}
+              disabled={savingAlerts}
+              style={({ pressed }) => [
+                authStyles.button,
+                {
+                  backgroundColor: colors.primary,
+                  opacity: pressed || savingAlerts ? 0.5 : 1,
+                },
+              ]}
+            >
+              {savingAlerts ? (
+                <ActivityIndicator color={colors.primaryText} />
+              ) : (
+                <Text
+                  style={[authStyles.buttonText, { color: colors.primaryText }]}
+                >
+                  Save
+                </Text>
+              )}
+            </Pressable>
+          ) : null}
         </View>
 
         <Pressable
@@ -644,6 +594,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginBottom: 12,
     marginTop: -4,
+  },
+  advancedLink: {
+    fontSize: 12,
+    textDecorationLine: "underline",
+    marginBottom: 12,
   },
   emptyChart: {
     fontSize: 14,

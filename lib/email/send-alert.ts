@@ -23,14 +23,11 @@ export async function sendPriceAlertEmail(params: SendPriceAlertParams): Promise
     return false;
   }
 
-  const subjectReason =
-    params.reason === "discount_percent" ? "Discount alert" : "Target price reached";
+  const subjectReason = "Price drop";
 
   const body = buildAlertMessage({
     currency: params.currency,
     price: params.price,
-    reason: params.reason,
-    targetPrice: params.targetPrice,
     discountPercent: params.discountPercent,
     discountAlertPercent: params.discountAlertPercent,
     baselinePrice: params.baselinePrice,

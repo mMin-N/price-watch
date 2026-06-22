@@ -1,4 +1,5 @@
 import type { SupportedSite } from "../detect-site";
+import { extractImageFromHtml } from "../extract-product-image";
 import { parsePriceFromHtml } from "../parse-price";
 import { parseEbayPage } from "./ebay";
 import { parseFlipkartPage } from "./flipkart";
@@ -38,6 +39,13 @@ export function parseSitePage(
       html.match(/content="([^"]+)"\s+property="og:title"/i);
     if (title?.[1]) {
       result = { ...result, title: title[1].trim() };
+    }
+  }
+
+  if (!result.imageUrl) {
+    const imageUrl = extractImageFromHtml(html);
+    if (imageUrl) {
+      result = { ...result, imageUrl };
     }
   }
 

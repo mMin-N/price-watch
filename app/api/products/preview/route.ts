@@ -49,6 +49,7 @@ export async function POST(request: Request) {
       title: fetchResult.title?.trim() || "Unknown product",
       price: fetchResult.price,
       currency: fetchResult.currency,
+      imageUrl: fetchResult.imageUrl ?? null,
       site,
       siteName: siteDisplayName(site),
     });

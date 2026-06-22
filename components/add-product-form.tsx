@@ -7,6 +7,7 @@ type ProductPreview = {
   title: string;
   price: number;
   currency: string;
+  imageUrl?: string | null;
   site?: string;
   siteName?: string;
 };
@@ -37,7 +38,6 @@ export function AddProductForm({
   const atProductLimit = productCount >= MAX_TRACKED_PRODUCTS_PER_USER;
   const formDisabled = disabled || atProductLimit;
   const [url, setUrl] = useState("");
-  const [targetPrice, setTargetPrice] = useState("");
   const [discountAlertPercent, setDiscountAlertPercent] = useState("");
   const [wishlistItemId, setWishlistItemId] = useState(fixedWishlistItemId ?? "");
   const [wishlists, setWishlists] = useState<Wishlist[]>([]);
@@ -46,6 +46,7 @@ export function AddProductForm({
   const [error, setError] = useState<string | null>(null);
   const [finding, setFinding] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const { showToast } = useToast();
 
   useEffect(() => {
@@ -122,6 +123,7 @@ export function AddProductForm({
         title: data.title,
         price: data.price,
         currency: data.currency ?? "USD",
+        imageUrl: data.imageUrl ?? null,
         site: data.site,
         siteName: data.siteName,
       });
@@ -148,20 +150,10 @@ export function AddProductForm({
       url: url.trim(),
     };
 
-    if (targetPrice.trim()) {
-      const parsed = Number(targetPrice);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        setError("Target price must be a valid number");
-        setLoading(false);
-        return;
-      }
-      body.targetPrice = parsed;
-    }
-
     if (discountAlertPercent.trim()) {
       const parsed = Number(discountAlertPercent);
       if (Number.isNaN(parsed) || parsed <= 0 || parsed > 100) {
-        setError("Discount alert must be between 1 and 100");
+        setError("Minimum discount must be between 1 and 100");
         setLoading(false);
         return;
       }
@@ -190,10 +182,10 @@ export function AddProductForm({
       }
 
       setUrl("");
-      setTargetPrice("");
       setDiscountAlertPercent("");
       setPreview(null);
       setPreviewUrl(null);
+      setExpanded(false);
       if (!fixedWishlistItemId) {
         setWishlistItemId("");
       }
@@ -207,10 +199,26 @@ export function AddProductForm({
   }
 
   return (
-    <section className="rounded-lg border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-      <h2 className="mb-4 text-lg font-medium text-zinc-900 dark:text-zinc-50">
-        Add Product
-      </h2>
+    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+      <button
+        type="button"
+        onClick={() => setExpanded((value) => !value)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        aria-expanded={expanded}
+      >
+        <span className="text-base font-medium text-zinc-900 dark:text-zinc-50">
+          Add Product
+        </span>
+        <span
+          className={`text-zinc-500 transition-transform dark:text-zinc-400 ${expanded ? "rotate-180" : ""}`}
+          aria-hidden
+        >
+          ▾
+        </span>
+      </button>
+
+      {expanded ? (
+        <div className="border-t border-zinc-100 px-4 pb-4 pt-3 dark:border-zinc-900">
       {atProductLimit && (
         <p className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
           You are tracking {MAX_TRACKED_PRODUCTS_PER_USER} products (the maximum). Remove one
@@ -252,7 +260,17 @@ export function AddProductForm({
             <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
               Product found
             </p>
-            <p className="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            <div className="mt-2 flex gap-3">
+              {preview.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview.imageUrl}
+                  alt={preview.title}
+                  className="h-20 w-20 shrink-0 rounded-md object-cover"
+                />
+              ) : null}
+              <div className="min-w-0">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
               {preview.title}
             </p>
             {preview.siteName && (
@@ -265,79 +283,59 @@ export function AddProductForm({
             <p className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               {formatUsd(preview.price)}
             </p>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label
-              htmlFor="target-price"
-              className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
-              Target price USD (optional)
-            </label>
-            <input
-              id="target-price"
-              type="number"
-              min="0"
-              step="0.01"
-              placeholder="29.99"
-              value={targetPrice}
-              onChange={(e) => setTargetPrice(e.target.value)}
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </div>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          You&apos;ll be notified when the price drops from the price when added.
+        </p>
 
+        {!fixedWishlistItemId ? (
           <div>
             <label
-              htmlFor="discount-alert"
+              htmlFor="wishlist"
               className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
             >
-              Discount alert % (optional)
+              Wishlist (optional)
             </label>
+            <select
+              id="wishlist"
+              value={wishlistItemId}
+              onChange={(e) => setWishlistItemId(e.target.value)}
+              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              {wishlists.map((wishlist) => (
+                <option key={wishlist.id} value={wishlist.id}>
+                  {wishlist.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+
+        <details className="text-xs text-zinc-500 dark:text-zinc-400">
+          <summary className="cursor-pointer select-none text-zinc-600 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">
+            Minimum discount % (optional)
+          </summary>
+          <div className="mt-2">
             <input
               id="discount-alert"
               type="number"
               min="1"
               max="100"
               step="0.1"
-              placeholder="20"
+              placeholder="Any drop"
               value={discountAlertPercent}
               onChange={(e) => setDiscountAlertPercent(e.target.value)}
-              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-full rounded border border-zinc-300 px-3 py-2 text-sm text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-50"
             />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Notify when price drops this % below the price when added
+            <p className="mt-1">
+              Leave empty to notify on any price drop. Set a value to require at least that % off.
             </p>
           </div>
-
-          {!fixedWishlistItemId && (
-            <div className="sm:col-span-2">
-              <label
-                htmlFor="wishlist"
-                className="mb-1 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-              >
-                Wishlist (optional)
-              </label>
-              <select
-                id="wishlist"
-                value={wishlistItemId}
-                onChange={(e) => setWishlistItemId(e.target.value)}
-                className="w-full rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-              >
-                {wishlists.map((wishlist) => (
-                  <option key={wishlist.id} value={wishlist.id}>
-                    {wishlist.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-        </div>
-
-        <p className="text-xs text-zinc-500 dark:text-zinc-400">
-          Either alert condition can trigger a notification (only one needed).
-        </p>
+        </details>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -350,6 +348,8 @@ export function AddProductForm({
         </button>
         </fieldset>
       </form>
+        </div>
+      ) : null}
     </section>
   );
 }

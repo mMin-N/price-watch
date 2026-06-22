@@ -79,8 +79,8 @@ export default function AddProductScreen() {
   const [error, setError] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [targetPrice, setTargetPrice] = useState("");
   const [discountAlertPercent, setDiscountAlertPercent] = useState("");
+  const [showMinDiscount, setShowMinDiscount] = useState(false);
   const [wishlistItemId, setWishlistItemId] = useState("");
   const [wishlists, setWishlists] = useState<WishlistItem[]>([]);
 
@@ -191,20 +191,10 @@ export default function AddProductScreen() {
 
     const body: Record<string, unknown> = { url: trimmedUrl };
 
-    if (targetPrice.trim()) {
-      const parsed = Number.parseFloat(targetPrice);
-      if (Number.isNaN(parsed) || parsed < 0) {
-        setError("Target price must be a valid number");
-        setSubmitting(false);
-        return;
-      }
-      body.targetPrice = parsed;
-    }
-
     if (discountAlertPercent.trim()) {
       const parsed = Number.parseFloat(discountAlertPercent);
       if (Number.isNaN(parsed) || parsed <= 0 || parsed > 100) {
-        setError("Discount alert must be between 1 and 100");
+        setError("Minimum discount must be between 1 and 100");
         setSubmitting(false);
         return;
       }
@@ -335,43 +325,38 @@ export default function AddProductScreen() {
 
         {preview ? (
           <View style={styles.alertFields}>
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Target price USD (optional)
+            <Text style={[styles.hintText, { color: colors.muted }]}>
+              You&apos;ll be notified when the price drops from the price when added.
             </Text>
-            <TextInput
-              value={targetPrice}
-              onChangeText={setTargetPrice}
-              placeholder="29.99"
-              placeholderTextColor={colors.muted}
-              keyboardType="decimal-pad"
-              style={[
-                styles.fieldInput,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: colors.surface,
-                  color: colors.text,
-                },
-              ]}
-            />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>
-              Discount alert % (optional)
-            </Text>
-            <TextInput
-              value={discountAlertPercent}
-              onChangeText={setDiscountAlertPercent}
-              placeholder="20"
-              placeholderTextColor={colors.muted}
-              keyboardType="decimal-pad"
-              style={[
-                styles.fieldInput,
-                {
-                  borderColor: colors.border,
-                  backgroundColor: colors.surface,
-                  color: colors.text,
-                },
-              ]}
-            />
+            <Pressable onPress={() => setShowMinDiscount((value) => !value)}>
+              <Text style={[styles.advancedLink, { color: colors.muted }]}>
+                {showMinDiscount ? "Hide minimum discount %" : "Minimum discount % (optional)"}
+              </Text>
+            </Pressable>
+
+            {showMinDiscount ? (
+              <>
+                <TextInput
+                  value={discountAlertPercent}
+                  onChangeText={setDiscountAlertPercent}
+                  placeholder="Any drop"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="decimal-pad"
+                  style={[
+                    styles.fieldInput,
+                    {
+                      borderColor: colors.border,
+                      backgroundColor: colors.surface,
+                      color: colors.text,
+                    },
+                  ]}
+                />
+                <Text style={[styles.hintText, { color: colors.muted }]}>
+                  Leave empty for any drop. Set a value to require at least that % off.
+                </Text>
+              </>
+            ) : null}
 
             {wishlists.length > 0 && !fixedWishlistId ? (
               <>
@@ -522,6 +507,15 @@ const styles = StyleSheet.create({
   fieldLabel: {
     fontSize: 14,
     fontWeight: "500",
+    marginTop: 4,
+  },
+  hintText: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  advancedLink: {
+    fontSize: 12,
+    textDecorationLine: "underline",
     marginTop: 4,
   },
   fieldInput: {

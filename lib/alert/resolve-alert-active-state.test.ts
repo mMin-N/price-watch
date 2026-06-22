@@ -3,51 +3,49 @@ import { resolveAlertActiveState } from "./resolve-alert-active-state";
 import { evaluateAlert } from "@/lib/pipeline/evaluate-alert";
 
 describe("resolveAlertActiveState", () => {
-  it("notifies on first target price trigger", () => {
-    const evaluation = evaluateAlert(9, 10, null, 100);
-    const state = resolveAlertActiveState(9, 10, null, 100, false, false, evaluation);
+  it("notifies on first price drop", () => {
+    const evaluation = evaluateAlert(99, null, 100);
+    const state = resolveAlertActiveState(99, null, 100, false, evaluation);
     expect(state.shouldNotify).toBe(true);
-    expect(state.targetPriceAlertActive).toBe(true);
+    expect(state.discountAlertActive).toBe(true);
   });
 
-  it("does not notify when target alert is already active", () => {
-    const evaluation = evaluateAlert(9, 10, null, 100);
-    const state = resolveAlertActiveState(9, 10, null, 100, true, false, evaluation);
+  it("does not notify when discount alert is already active", () => {
+    const evaluation = evaluateAlert(99, null, 100);
+    const state = resolveAlertActiveState(99, null, 100, true, evaluation);
     expect(state.shouldNotify).toBe(false);
-    expect(state.targetPriceAlertActive).toBe(true);
+    expect(state.discountAlertActive).toBe(true);
   });
 
-  it("clears target alert when price rises above target", () => {
-    const evaluation = evaluateAlert(12, 10, null, 100);
-    const state = resolveAlertActiveState(12, 10, null, 100, true, false, evaluation);
+  it("clears discount alert when price recovers to baseline", () => {
+    const evaluation = evaluateAlert(100, null, 100);
+    const state = resolveAlertActiveState(100, null, 100, true, evaluation);
     expect(state.shouldNotify).toBe(false);
-    expect(state.targetPriceAlertActive).toBe(false);
+    expect(state.discountAlertActive).toBe(false);
   });
 
   it("re-notifies after price recovers then drops again", () => {
-    const recovered = evaluateAlert(12, 10, null, 100);
-    const cleared = resolveAlertActiveState(12, 10, null, 100, true, false, recovered);
-    expect(cleared.targetPriceAlertActive).toBe(false);
+    const recovered = evaluateAlert(100, null, 100);
+    const cleared = resolveAlertActiveState(100, null, 100, true, recovered);
+    expect(cleared.discountAlertActive).toBe(false);
 
-    const dropped = evaluateAlert(9, 10, null, 100);
+    const dropped = evaluateAlert(95, null, 100);
     const state = resolveAlertActiveState(
-      9,
-      10,
+      95,
       null,
       100,
-      cleared.targetPriceAlertActive,
-      false,
+      cleared.discountAlertActive,
       dropped
     );
     expect(state.shouldNotify).toBe(true);
   });
 
   it("notifies on discount trigger only once while active", () => {
-    const evaluation = evaluateAlert(75, null, 20, 100);
-    const first = resolveAlertActiveState(75, null, 20, 100, false, false, evaluation);
+    const evaluation = evaluateAlert(75, 20, 100);
+    const first = resolveAlertActiveState(75, 20, 100, false, evaluation);
     expect(first.shouldNotify).toBe(true);
 
-    const second = resolveAlertActiveState(75, null, 20, 100, false, true, evaluation);
+    const second = resolveAlertActiveState(75, 20, 100, true, evaluation);
     expect(second.shouldNotify).toBe(false);
   });
 });

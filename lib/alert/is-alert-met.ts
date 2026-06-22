@@ -5,7 +5,6 @@ export function isAlertConditionMet(product: Product): boolean {
   if (product.lastPrice === null) return false;
   return evaluateAlert(
     product.lastPrice,
-    product.targetPrice,
     product.discountAlertPercent,
     product.baselinePrice
   ).triggered;

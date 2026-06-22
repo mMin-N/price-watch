@@ -1,4 +1,4 @@
-export type AlertTriggerReason = "target_price" | "discount_percent";
+export type AlertTriggerReason = "discount_percent";
 
 export type AlertEvaluation = {
   triggered: boolean;
@@ -11,35 +11,28 @@ export function computeDiscountPercent(baselinePrice: number, currentPrice: numb
   return ((baselinePrice - currentPrice) / baselinePrice) * 100;
 }
 
+/**
+ * Notifies when price drops below baseline.
+ * `discountAlertPercent` null = any drop; otherwise requires at least that % off baseline.
+ */
 export function evaluateAlert(
   price: number,
-  targetPrice: number | null,
   discountAlertPercent: number | null,
   baselinePrice: number | null
 ): AlertEvaluation {
-  if (targetPrice !== null && price <= targetPrice) {
-    return {
-      triggered: true,
-      reason: "target_price",
-      discountPercent:
-        baselinePrice !== null ? computeDiscountPercent(baselinePrice, price) : null,
-    };
+  if (baselinePrice === null || baselinePrice <= 0 || price >= baselinePrice) {
+    return { triggered: false, reason: null, discountPercent: null };
   }
 
-  if (
-    discountAlertPercent !== null &&
-    discountAlertPercent > 0 &&
-    baselinePrice !== null &&
-    baselinePrice > 0
-  ) {
-    const discountPercent = computeDiscountPercent(baselinePrice, price);
-    if (discountPercent >= discountAlertPercent) {
-      return {
-        triggered: true,
-        reason: "discount_percent",
-        discountPercent,
-      };
-    }
+  const discountPercent = computeDiscountPercent(baselinePrice, price);
+  const threshold = discountAlertPercent ?? 0;
+
+  if (discountPercent > 0 && discountPercent >= threshold) {
+    return {
+      triggered: true,
+      reason: "discount_percent",
+      discountPercent,
+    };
   }
 
   return { triggered: false, reason: null, discountPercent: null };
@@ -47,5 +40,6 @@ export function evaluateAlert(
 
 /** @deprecated Use evaluateAlert */
 export function shouldTriggerAlert(price: number, targetPrice: number | null): boolean {
-  return evaluateAlert(price, targetPrice, null, null).triggered;
+  if (targetPrice === null) return false;
+  return price <= targetPrice;
 }

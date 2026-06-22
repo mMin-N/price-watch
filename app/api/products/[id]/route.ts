@@ -4,7 +4,6 @@ import { jsonError } from "@/lib/api/errors";
 import { mapProduct, PRODUCT_COLUMNS } from "@/lib/api/product-map";
 import {
   parseDiscountAlertPercent,
-  parseOptionalPrice,
   validateOwnedWishlistItem,
 } from "@/lib/api/validate-product-input";
 import { deleteOwnedRow } from "@/lib/supabase/delete-owned-row";
@@ -109,14 +108,6 @@ export async function PATCH(request: Request, context: RouteContext) {
   const updates: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
   };
-
-  if ("targetPrice" in body) {
-    const targetPrice = parseOptionalPrice(body.targetPrice);
-    if (targetPrice === "invalid") {
-      return jsonError(400, "targetPrice must be a non-negative finite number or null");
-    }
-    updates.target_price = targetPrice;
-  }
 
   if ("discountAlertPercent" in body) {
     const raw = body.discountAlertPercent;

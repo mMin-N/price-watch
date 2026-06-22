@@ -14,7 +14,6 @@ export function computeAlertActive(row: ProductRow): boolean {
   if ((row.availability_status ?? "unknown") === "out_of_stock") return false;
   return evaluateAlert(
     row.last_price,
-    row.target_price,
     row.discount_alert_percent,
     row.baseline_price
   ).triggered;

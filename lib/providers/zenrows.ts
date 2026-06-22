@@ -10,6 +10,7 @@ interface AmazonProductResponse {
   product_price?: number;
   price_currency_code?: string;
   product_name?: string;
+  product_images?: string[];
   is_available?: boolean;
 }
 
@@ -70,6 +71,7 @@ export class ZenRowsProvider implements PriceProvider {
       price,
       currency: data.price_currency_code ?? "USD",
       title: data.product_name,
+      imageUrl: data.product_images?.[0],
       isAvailable,
     };
   }

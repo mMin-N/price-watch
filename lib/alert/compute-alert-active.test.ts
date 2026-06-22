@@ -7,6 +7,7 @@ function row(overrides: Partial<ProductRow>): ProductRow {
     id: "1",
     url: "https://www.amazon.com/dp/B0TEST",
     title: "Test",
+    image_url: null,
     target_price: 10,
     discount_alert_percent: null,
     baseline_price: 100,
@@ -35,7 +36,9 @@ describe("computeAlertActive", () => {
     ).toBe(false);
   });
 
-  it("returns true when target price met", () => {
-    expect(computeAlertActive(row({ last_price: 9, target_price: 10 }))).toBe(true);
+  it("returns true when price dropped below baseline", () => {
+    expect(computeAlertActive(row({ last_price: 95, target_price: null, baseline_price: 100 }))).toBe(
+      true
+    );
   });
 });
