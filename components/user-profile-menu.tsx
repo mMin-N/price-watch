@@ -85,13 +85,13 @@ export function UserProfileMenu() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="flex items-center gap-2 rounded-full border border-zinc-200 bg-white py-1 pl-1 pr-2 shadow-sm transition hover:bg-zinc-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 sm:pr-3 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:bg-zinc-800"
+        className="flex items-center gap-2 rounded-full border border-white/25 bg-white/10 py-1 pl-1 pr-2 shadow-sm transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-purple sm:pr-3"
         aria-label="Open account menu"
         aria-expanded={open}
         aria-haspopup="menu"
         title={label}
       >
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-emerald-600 text-sm font-semibold text-white ring-2 ring-white dark:ring-zinc-900">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-brand-accent text-sm font-semibold text-brand-purple-dark ring-2 ring-white/30">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -106,7 +106,7 @@ export function UserProfileMenu() {
             <UserIcon />
           )}
         </span>
-        <span className="hidden max-w-[8rem] truncate text-sm font-medium text-zinc-700 sm:inline dark:text-zinc-200">
+        <span className="hidden max-w-[8rem] truncate text-sm font-medium text-white/90 sm:inline">
           {email ?? "Account"}
         </span>
       </button>

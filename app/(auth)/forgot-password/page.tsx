@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="mx-auto mt-20 max-w-md p-6">
+    <main className="p-0">
       <h1 className="mb-2 text-2xl font-semibold">Forgot password</h1>
       <p className="mb-6 text-sm text-zinc-600">
         Enter your email and we will send a link to reset your password.
@@ -50,7 +50,7 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="btn-primary w-full px-4 py-2 disabled:opacity-50"
         >
           {loading ? "Sending..." : "Send reset link"}
         </button>

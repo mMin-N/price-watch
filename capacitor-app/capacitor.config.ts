@@ -14,8 +14,8 @@ const serverUrl =
   "https://your-app.vercel.app";
 
 const config: CapacitorConfig = {
-  appId: "com.pricewatch.app",
-  appName: "Price Watch",
+  appId: "com.dropt.com",
+  appName: "Dropt",
   webDir: "www",
   server: {
     url: serverUrl,
@@ -29,7 +29,7 @@ const config: CapacitorConfig = {
         action: "VIEW",
         category: ["DEFAULT", "BROWSABLE"],
         data: {
-          scheme: "com.pricewatch.app",
+          scheme: "com.dropt.com",
           host: "auth",
           pathPrefix: "/callback",
         },

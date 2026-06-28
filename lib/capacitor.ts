@@ -2,7 +2,7 @@ import { Capacitor } from "@capacitor/core";
 
 /** Custom URL scheme for native OAuth redirect (must match Supabase allow list). */
 export const NATIVE_OAUTH_REDIRECT =
-  process.env.NEXT_PUBLIC_NATIVE_OAUTH_REDIRECT ?? "com.pricewatch.app://auth/callback";
+  process.env.NEXT_PUBLIC_NATIVE_OAUTH_REDIRECT ?? "com.dropt.com://auth/callback";
 
 const PUSH_TOKEN_STORAGE_KEY = "pw_fcm_push_token";
 

@@ -1,4 +1,4 @@
-# Price Watch — Capacitor Android Shell
+# Dropt — Capacitor Android Shell
 
 Android app that loads the **deployed Next.js web app** in a WebView. No Metro / Expo dev client required for daily iteration: deploy the website and the shell picks up changes automatically.
 
@@ -17,7 +17,7 @@ The legacy Expo app in `mobile/` can be retired once this shell is validated.
 - Node.js 18+
 - Android Studio + SDK + Platform-Tools
 - Deployed Next.js site on HTTPS
-- Firebase project with Android app `com.pricewatch.app`
+- Firebase project with Android app `com.dropt.com`
 - `google-services.json` from Firebase Console
 
 ## One-time setup
@@ -28,6 +28,7 @@ Set your production URL in `.env.local` at the repo root:
 
 ```env
 NEXT_PUBLIC_APP_URL=https://your-app.vercel.app
+NEXT_PUBLIC_NATIVE_OAUTH_REDIRECT=com.dropt.com://auth/callback
 ```
 
 For Capacitor sync, export before adding Android:
@@ -45,7 +46,8 @@ $env:CAPACITOR_SERVER_URL="https://your-app.vercel.app"
 In Supabase Dashboard → **Authentication** → **URL Configuration**, add:
 
 ```
-com.pricewatch.app://auth/callback
+com.dropt.com://auth/callback
+dropt://
 ```
 
 ### 3. Install and generate Android project
@@ -84,6 +86,7 @@ npx cap add android
 | Change UI / logic | Edit `app/`, deploy to Vercel |
 | Rebuild shell (icons, native plugins) | `cd capacitor-app && npx cap sync android` |
 | Run on USB device | Android Studio → Run, or `npx cap run android` |
+| Regenerate icons | `npm run icons` (from repo root) |
 
 Web changes do **not** require rebuilding the APK when using remote `server.url` mode.
 
@@ -103,13 +106,13 @@ npx cap sync android
 
 ## Package name
 
-`com.pricewatch.app` — matches Firebase and the legacy Expo app.
+`com.dropt.com` — matches Firebase `google-services.json`.
 
 ## Troubleshooting
 
 | Issue | Fix |
 |-------|-----|
 | Blank / placeholder page | Set `CAPACITOR_SERVER_URL` and run `npx cap sync android` |
-| Google sign-in fails | Add `com.pricewatch.app://auth/callback` in Supabase; use system browser flow (automatic in app) |
+| Google sign-in fails | Add `com.dropt.com://auth/callback` in Supabase; use system browser flow (automatic in app) |
 | No push | Add `google-services.json`, apply GMS plugin, grant notification permission in Profile |
 | Web page not available | Ensure phone has network; URL must be HTTPS in production |

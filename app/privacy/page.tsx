@@ -40,7 +40,7 @@ export default function PrivacyPage() {
       <section className="mb-8 space-y-3 text-sm leading-relaxed">
         <h2 className="text-lg font-medium">International users</h2>
         <p>
-          Price Watch is operated internationally. By using the service from India or elsewhere, you
+          Dropt is operated internationally. By using the service from India or elsewhere, you
           consent to processing in jurisdictions where our infrastructure providers operate.
         </p>
       </section>

@@ -46,7 +46,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[200] flex border-t border-zinc-200 bg-white/95 backdrop-blur lg:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
+      className="fixed inset-x-0 bottom-0 z-[200] flex border-t border-border bg-white shadow-[0_-4px_20px_rgba(26,15,46,0.06)] lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
       data-user-chrome
       aria-label="Main navigation"
@@ -60,14 +60,16 @@ export function MobileBottomNav() {
               key={href}
               href={href}
               className={`relative flex min-h-14 min-w-16 flex-1 flex-col items-center justify-center gap-0.5 px-2 py-2 text-xs font-medium ${
-                active
-                  ? "text-zinc-900 dark:text-zinc-50"
-                  : "text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+                active ? "text-brand-purple" : "text-muted hover:text-brand-purple"
               }`}
             >
-              <span>{label}</span>
+              <span
+                className={`${active ? "border-b-2 border-brand-accent pb-0.5" : ""}`}
+              >
+                {label}
+              </span>
               {showBadge ? (
-                <span className="absolute top-2 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold text-white">
+                <span className="absolute top-2 right-1/4 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-pink px-1 text-[10px] font-semibold text-white">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </span>
               ) : null}

@@ -2,7 +2,6 @@ import { SymbolView } from "expo-symbols";
 import { Tabs, useRouter } from "expo-router";
 import { Pressable, View } from "react-native";
 
-import Colors from "@/constants/Colors";
 import { useColorScheme } from "@/components/useColorScheme";
 import { useClientOnlyValue } from "@/components/useClientOnlyValue";
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count";
@@ -17,15 +16,15 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarActiveTintColor: colors.link,
         tabBarStyle: {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
         },
         headerStyle: {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.header,
         },
-        headerTintColor: colors.text,
+        headerTintColor: colors.headerText,
         headerShadowVisible: false,
         headerShown: useClientOnlyValue(false, true),
       }}
@@ -66,7 +65,7 @@ export default function TabLayout() {
                       web: "settings",
                     }}
                     size={24}
-                    tintColor={colors.text}
+                    tintColor={colors.headerText}
                     style={{ opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
@@ -79,7 +78,7 @@ export default function TabLayout() {
                   <SymbolView
                     name={{ ios: "plus", android: "add", web: "add" }}
                     size={25}
-                    tintColor={colors.text}
+                    tintColor={colors.headerText}
                     style={{ opacity: pressed ? 0.5 : 1 }}
                   />
                 )}

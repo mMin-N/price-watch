@@ -172,7 +172,7 @@ export default function WishlistsPage() {
           <button
             type="submit"
             disabled={creating}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+            className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
           >
             {creating ? "Creating..." : "Create"}
           </button>

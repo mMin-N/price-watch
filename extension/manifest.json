@@ -1,11 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "Price Watch Wishlist",
+  "name": "Dropt Wishlist",
   "version": "1.0.0",
   "description": "Save Amazon products to a local wishlist and refresh prices from the page DOM.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Price Watch Wishlist"
+    "default_title": "Dropt Wishlist"
   },
   "permissions": ["tabs", "storage", "scripting"],
   "host_permissions": [

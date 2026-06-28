@@ -40,7 +40,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto mt-20 max-w-md p-6">
+    <main className="p-0">
       <h1 className="mb-6 text-2xl font-semibold">Register</h1>
       <GoogleAuthButton label="Sign up with Google" />
       <div className="my-4 flex items-center gap-3 text-xs text-zinc-500">
@@ -93,7 +93,7 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="btn-primary w-full px-4 py-2 disabled:opacity-50"
         >
           {loading ? "Creating account..." : "Create account"}
         </button>

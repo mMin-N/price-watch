@@ -1,5 +1,5 @@
 {
-  "name": "price-watch",
+  "name": "dropt",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -14,7 +14,8 @@
     "db:apply-011": "node scripts/apply-sql-file.mjs supabase/migrations/011_default_wishlist.sql",
     "measure:amazon-cost": "node scripts/measure-amazon-zenrows-cost.mjs",
     "measure:site-cost": "npx tsx scripts/measure-all-cost-probe.ts",
-    "measure:multi-url": "npx tsx scripts/measure-multi-url-probe.ts"
+    "measure:multi-url": "npx tsx scripts/measure-multi-url-probe.ts",
+    "icons": "py -3 scripts/generate-icons.py"
   },
   "dependencies": {
     "@capacitor/app": "^7.1.2",

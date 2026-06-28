@@ -37,7 +37,7 @@ export async function sendPriceAlertEmail(params: SendPriceAlertParams): Promise
   const { error } = await resend.emails.send({
     from,
     to: params.to,
-    subject: `[Price Watch] ${subjectReason}: ${params.productTitle}`,
+    subject: `[Dropt] ${subjectReason}: ${params.productTitle}`,
     text: `Good news! ${params.productTitle} — ${body}\n\nView: ${params.url}`,
   });
 

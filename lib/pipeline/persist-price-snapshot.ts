@@ -158,7 +158,7 @@ async function persistPriceSnapshotLocked(
 
   const subjectReason = "Price drop";
   const fcmPromise = sendFcmAlertsToUser(product.user_id, {
-    title: `[Price Watch] ${subjectReason}`,
+    title: `[Dropt] ${subjectReason}`,
     body: message,
     data: {
       productId: product.id,

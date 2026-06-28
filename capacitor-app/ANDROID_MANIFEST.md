@@ -8,7 +8,7 @@
     <category android:name="android.intent.category.DEFAULT" />
     <category android:name="android.intent.category.BROWSABLE" />
     <data
-        android:scheme="com.pricewatch.app"
+        android:scheme="com.dropt.com"
         android:host="auth"
         android:pathPrefix="/callback" />
 </intent-filter>

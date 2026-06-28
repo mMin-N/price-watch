@@ -199,18 +199,16 @@ export function AddProductForm({
   }
 
   return (
-    <section className="overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+    <section className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
       <button
         type="button"
         onClick={() => setExpanded((value) => !value)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        className="topper flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
         aria-expanded={expanded}
       >
-        <span className="text-base font-medium text-zinc-900 dark:text-zinc-50">
-          Add Product
-        </span>
+        <span className="text-base font-medium">Add Product</span>
         <span
-          className={`text-zinc-500 transition-transform dark:text-zinc-400 ${expanded ? "rotate-180" : ""}`}
+          className={`text-brand-accent transition-transform ${expanded ? "rotate-180" : ""}`}
           aria-hidden
         >
           ▾
@@ -218,7 +216,7 @@ export function AddProductForm({
       </button>
 
       {expanded ? (
-        <div className="border-t border-zinc-100 px-4 pb-4 pt-3 dark:border-zinc-900">
+        <div className="border-t border-border px-4 pb-4 pt-3">
       {atProductLimit && (
         <p className="mb-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200">
           You are tracking {MAX_TRACKED_PRODUCTS_PER_USER} products (the maximum). Remove one
@@ -256,8 +254,8 @@ export function AddProductForm({
         </div>
 
         {preview && (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900 dark:bg-emerald-950/40">
-            <p className="text-xs font-medium uppercase tracking-wide text-emerald-700 dark:text-emerald-400">
+          <div className="rounded-md border border-brand-accent/40 bg-amber-50 p-4">
+            <p className="text-xs font-medium uppercase tracking-wide text-brand-purple">
               Product found
             </p>
             <div className="mt-2 flex gap-3">
@@ -342,7 +340,7 @@ export function AddProductForm({
         <button
           type="submit"
           disabled={loading || !preview || disabled}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+          className="btn-primary px-4 py-2 text-sm disabled:opacity-50"
         >
           {loading ? "Adding..." : "Add product"}
         </button>

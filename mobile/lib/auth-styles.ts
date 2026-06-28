@@ -1,29 +1,41 @@
-import { StyleSheet } from "react-native";
+export const brand = {
+  purple: "#2a1854",
+  purpleDark: "#1a0f2e",
+  accent: "#f5b820",
+  accentHover: "#e8a810",
+  pink: "#d946a8",
+};
 
 export const zinc = {
   light: {
-    background: "#fafafa",
+    background: "#ffffff",
     surface: "#ffffff",
-    text: "#18181b",
-    muted: "#71717a",
-    border: "#e4e4e7",
-    primary: "#18181b",
-    primaryText: "#fafafa",
+    text: brand.purpleDark,
+    muted: "#6b6280",
+    border: "#e8e4f0",
+    primary: brand.accent,
+    primaryText: brand.purpleDark,
+    header: brand.purple,
+    headerText: "#ffffff",
     error: "#dc2626",
-    link: "#52525b",
+    link: brand.purple,
   },
   dark: {
-    background: "#09090b",
-    surface: "#18181b",
-    text: "#fafafa",
-    muted: "#a1a1aa",
-    border: "#3f3f46",
-    primary: "#fafafa",
-    primaryText: "#18181b",
-    error: "#f87171",
-    link: "#a1a1aa",
+    background: "#ffffff",
+    surface: "#ffffff",
+    text: brand.purpleDark,
+    muted: "#6b6280",
+    border: "#e8e4f0",
+    primary: brand.accent,
+    primaryText: brand.purpleDark,
+    header: brand.purple,
+    headerText: "#ffffff",
+    error: "#dc2626",
+    link: brand.purple,
   },
 };
+
+import { StyleSheet } from "react-native";
 
 export const authStyles = StyleSheet.create({
   container: {

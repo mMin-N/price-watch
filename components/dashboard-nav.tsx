@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "@/components/notification-bell";
@@ -44,29 +45,21 @@ export function DashboardNav() {
   }, [pathname, fetchUnreadCount]);
 
   return (
-    <header
-      className="sticky top-0 z-[100] border-b border-zinc-200 bg-white/95 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95"
-      data-user-chrome
-    >
+    <header className="topper sticky top-0 z-[100] shadow-md" data-user-chrome>
       <div className="mx-auto max-w-6xl px-4">
         <div className="flex items-center justify-between gap-3 py-3">
-          <Link
-            href="/"
-            className="shrink-0 text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-          >
-            Price Watch
+          <Link href="/" className="flex shrink-0 items-center gap-2 text-lg font-semibold text-white">
+            <Image src="/icon.png" alt="" width={28} height={28} className="rounded-md ring-1 ring-white/20" />
+            Dropt
           </Link>
 
-          <div
-            className="flex shrink-0 items-center gap-2 sm:gap-3"
-            data-user-chrome
-          >
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3" data-user-chrome>
             <UserProfileMenu />
             <NotificationBell unreadCount={unreadCount} />
           </div>
         </div>
 
-        <nav className="-mx-4 flex items-center gap-4 overflow-x-auto border-t border-zinc-100 px-4 py-2 sm:mx-0 sm:gap-6 sm:border-t-0 sm:px-0 sm:py-0 sm:pb-3 dark:border-zinc-800">
+        <nav className="-mx-4 flex items-center gap-4 overflow-x-auto border-t border-white/10 px-4 py-2 sm:mx-0 sm:gap-6 sm:px-0 sm:py-0 sm:pb-3">
           {navLinks.map(({ href, label }) => {
             const isActive =
               href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -74,10 +67,10 @@ export function DashboardNav() {
               <Link
                 key={href}
                 href={href}
-                className={`shrink-0 text-sm font-medium whitespace-nowrap ${
+                className={`shrink-0 text-sm font-medium whitespace-nowrap transition-colors ${
                   isActive
-                    ? "text-zinc-900 dark:text-zinc-50"
-                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                    ? "text-brand-accent"
+                    : "text-white/75 hover:text-white"
                 }`}
               >
                 {label}

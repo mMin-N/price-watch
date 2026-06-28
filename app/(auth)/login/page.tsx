@@ -29,7 +29,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="mx-auto mt-20 max-w-md p-6">
+    <main className="p-0">
       <h1 className="mb-6 text-2xl font-semibold">Login</h1>
       <GoogleAuthButton />
       <div className="my-4 flex items-center gap-3 text-xs text-zinc-500">
@@ -63,7 +63,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded bg-black px-4 py-2 text-white disabled:opacity-50"
+          className="btn-primary w-full px-4 py-2 disabled:opacity-50"
         >
           {loading ? "Signing in..." : "Sign in"}
         </button>

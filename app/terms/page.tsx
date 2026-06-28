@@ -9,7 +9,7 @@ export default function TermsPage() {
       <section className="mb-8 space-y-3 text-sm leading-relaxed">
         <h2 className="text-lg font-medium">Beta service</h2>
         <p>
-          Price Watch is offered as a public beta &quot;as is&quot; without warranties. Features,
+          Dropt is offered as a public beta &quot;as is&quot; without warranties. Features,
           pricing, and availability may change without notice.
         </p>
       </section>

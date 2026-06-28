@@ -56,7 +56,7 @@ export default function ExtensionConnectPage() {
           Chrome extension
         </h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Connect the Price Watch browser extension to your account. Copy the access token
+          Connect the Dropt browser extension to your account. Copy the access token
           below and paste it into the extension popup under API settings.
         </p>
       </div>
@@ -66,7 +66,7 @@ export default function ExtensionConnectPage() {
           type="button"
           onClick={loadToken}
           disabled={loading}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+            className="btn-primary px-4 py-2 text-sm disabled:opacity-60"
         >
           {loading ? "Loading…" : "Generate access token"}
         </button>

@@ -1,9 +1,9 @@
-# Price Watch Mobile (Android v1)
+# Dropt Mobile (Android v1)
 
 > **New:** Android is moving to a **Capacitor web shell** in [`capacitor-app/`](../capacitor-app/README.md).  
 > The Expo app below is legacy; use Capacitor for new Android work.
 
-Expo app for Price Watch Android v1. Uses a **dev client** (not Expo Go) for FCM push and native modules.
+Expo app for Dropt Android v1. Uses a **dev client** (not Expo Go) for FCM push and native modules.
 
 ## Prerequisites
 
@@ -56,9 +56,9 @@ Then press `a` to open on a connected emulator/device that already has the dev c
 
 ## Firebase / Push Notifications (Android)
 
-FCM requires a Firebase Android app whose package name matches `com.pricewatch.app` in `app.json`.
+FCM requires a Firebase Android app whose package name matches `com.dropt.com` in `app.json`.
 
-1. In [Firebase Console](https://console.firebase.google.com/), create or open your project and add an Android app with package name `com.pricewatch.app`.
+1. In [Firebase Console](https://console.firebase.google.com/), create or open your project and add an Android app with package name `com.dropt.com`.
 2. Download `google-services.json` from Firebase.
 3. Place the file at `mobile/google-services.json`.
 
@@ -75,12 +75,12 @@ Push token registration (`registerForPushNotifications`) only works on physical 
 
 ## Supabase: Google OAuth redirect URL
 
-Google sign-in uses the app scheme `price-watch` (see `app.json` and `app/(auth)/login.tsx`).
+Google sign-in uses the app scheme `dropt` (see `app.json` and `app/(auth)/login.tsx`).
 
 In the [Supabase Dashboard](https://supabase.com/dashboard) → **Authentication** → **URL Configuration**, add this redirect URL:
 
 ```
-price-watch://
+dropt://
 ```
 
 Also ensure Google OAuth is enabled under **Authentication** → **Providers** → **Google**, with the same Google Cloud OAuth client used by the web app.
@@ -118,3 +118,13 @@ Download the `.aab` from the EAS build page and upload to Google Play Console (i
 cd mobile
 npx tsc --noEmit
 ```
+
+## Regenerate icons
+
+From the repo root (requires `pip install pillow`):
+
+```bash
+npm run icons
+```
+
+Source logo: `assets/logo-source.png`

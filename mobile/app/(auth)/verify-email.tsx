@@ -97,7 +97,7 @@ export default function VerifyEmailScreen() {
         </Text>
         <Text style={[authStyles.message, { color: colors.muted }]}>
           {email
-            ? `We sent a confirmation link to ${email}. Open it to unlock Price Watch.`
+            ? `We sent a confirmation link to ${email}. Open it to unlock Dropt.`
             : "Please confirm your email address to continue."}
         </Text>
 

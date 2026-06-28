@@ -4,32 +4,74 @@
 @source "../app";
 
 :root {
+  /* Logo-inspired palette */
+  --brand-purple: #2a1854;
+  --brand-purple-dark: #1a0f2e;
+  --brand-accent: #f5b820;
+  --brand-accent-hover: #e8a810;
+  --brand-pink: #d946a8;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #1a0f2e;
+  --muted: #6b6280;
+  --border: #e8e4f0;
 }
 
 @theme inline {
+  --color-brand-purple: var(--brand-purple);
+  --color-brand-purple-dark: var(--brand-purple-dark);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-hover: var(--brand-accent-hover);
+  --color-brand-pink: var(--brand-pink);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: light;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
 body.capacitor-native {
   padding-top: env(safe-area-inset-top, 0px);
   -webkit-tap-highlight-color: transparent;
   overscroll-behavior-y: none;
+}
+
+.btn-primary {
+  border-radius: 0.5rem;
+  background-color: var(--brand-accent);
+  color: var(--brand-purple-dark);
+  font-weight: 600;
+  transition: background-color 0.15s ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--brand-accent-hover);
+}
+
+.btn-secondary {
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background-color: #ffffff;
+  color: var(--foreground);
+  font-weight: 500;
+  transition: background-color 0.15s ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #faf8ff;
+}
+
+.topper {
+  background-color: var(--brand-purple);
+  color: #ffffff;
 }

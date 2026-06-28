@@ -41,7 +41,7 @@ import { supabase } from "@/lib/supabase";
 
 WebBrowser.maybeCompleteAuthSession();
 
-const REDIRECT_URI = "price-watch://";
+const REDIRECT_URI = "dropt://";
 
 export default function LoginScreen() {
   const colorScheme = useColorScheme() ?? "light";

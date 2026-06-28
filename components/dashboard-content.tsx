@@ -56,7 +56,7 @@ export function DashboardContent() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+      <h1 className="text-xl font-semibold text-brand-purple">
         Tracked Products
       </h1>
 

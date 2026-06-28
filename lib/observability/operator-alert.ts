@@ -14,7 +14,7 @@ export async function sendOperatorAlert(subject: string, body: string): Promise<
         .send({
           from,
           to: email,
-          subject: `[Price Watch] ${subject}`,
+          subject: `[Dropt] ${subject}`,
           text: body,
         })
         .catch((err) => {
@@ -28,7 +28,7 @@ export async function sendOperatorAlert(subject: string, body: string): Promise<
       fetch(slackUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: `*[Price Watch]* ${subject}\n${body}` }),
+        body: JSON.stringify({ text: `*[Dropt]* ${subject}\n${body}` }),
       }).catch((err) => {
         console.error(JSON.stringify({ step: "operator_alert_slack_failed", error: String(err) }));
       })

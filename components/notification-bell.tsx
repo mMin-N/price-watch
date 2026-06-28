@@ -8,7 +8,7 @@ export function NotificationBell({ unreadCount }: NotificationBellProps) {
   return (
     <Link
       href="/notifications"
-      className="relative inline-flex items-center text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+      className="relative inline-flex items-center text-white/80 transition-colors hover:text-brand-accent"
       aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
     >
       <svg
@@ -26,7 +26,7 @@ export function NotificationBell({ unreadCount }: NotificationBellProps) {
         <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
       </svg>
       {unreadCount > 0 && (
-        <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-medium text-white">
+        <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-accent px-1 text-[10px] font-semibold text-brand-purple-dark">
           {unreadCount > 99 ? "99+" : unreadCount}
         </span>
       )}

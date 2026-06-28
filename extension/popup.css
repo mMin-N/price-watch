@@ -1,15 +1,16 @@
 :root {
-  color-scheme: light dark;
-  --bg: #0f1419;
-  --surface: #1a2332;
-  --border: #2d3a4f;
-  --text: #e8edf5;
-  --muted: #8b9cb3;
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --success: #22c55e;
-  --error: #ef4444;
-  --warning: #f59e0b;
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --border: #e8e4f0;
+  --text: #1a0f2e;
+  --muted: #6b6280;
+  --purple: #2a1854;
+  --primary: #f5b820;
+  --primary-hover: #e8a810;
+  --success: #16a34a;
+  --error: #dc2626;
+  --warning: #e8a810;
   --radius: 8px;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
@@ -29,8 +30,9 @@ body {
 }
 
 .header {
-  padding: 14px 16px 8px;
-  border-bottom: 1px solid var(--border);
+  padding: 14px 16px 10px;
+  background: var(--purple);
+  color: #ffffff;
 }
 
 .header h1 {
@@ -42,7 +44,7 @@ body {
 .subtitle {
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .actions {
@@ -68,7 +70,7 @@ body {
 
 .btn-primary {
   background: var(--primary);
-  color: #fff;
+  color: var(--purple);
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -82,7 +84,7 @@ body {
 }
 
 .btn-secondary:hover:not(:disabled) {
-  border-color: var(--primary);
+  border-color: var(--purple);
 }
 
 .status-banner {
@@ -93,18 +95,18 @@ body {
 }
 
 .status-banner.info {
-  background: rgba(59, 130, 246, 0.15);
-  color: #93c5fd;
+  background: rgba(42, 24, 84, 0.08);
+  color: var(--purple);
 }
 
 .status-banner.error {
-  background: rgba(239, 68, 68, 0.15);
-  color: #fca5a5;
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--error);
 }
 
 .status-banner.success {
-  background: rgba(34, 197, 94, 0.15);
-  color: #86efac;
+  background: rgba(245, 184, 32, 0.2);
+  color: var(--purple);
 }
 
 .progress {
@@ -113,7 +115,7 @@ body {
 
 .progress-bar {
   height: 6px;
-  background: var(--surface);
+  background: #f3f0fa;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -243,7 +245,7 @@ body {
 
 .settings summary {
   cursor: pointer;
-  color: var(--muted);
+  color: var(--purple);
   font-weight: 600;
 }
 
@@ -254,7 +256,7 @@ body {
 }
 
 .settings-help a {
-  color: #93c5fd;
+  color: var(--purple);
 }
 
 .settings-label {

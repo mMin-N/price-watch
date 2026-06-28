@@ -27,18 +27,15 @@ export function SummaryBar({ priceDropCount, unreadCount }: SummaryBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-brand-accent/30 bg-amber-50/80 px-4 py-3 text-sm">
       {parts.map((part, index) => (
         <span key={part.href + part.label} className="inline-flex items-center gap-2">
           {index > 0 ? (
-            <span className="text-zinc-400 dark:text-zinc-500" aria-hidden>
+            <span className="text-muted" aria-hidden>
               ·
             </span>
           ) : null}
-          <Link
-            href={part.href}
-            className="font-medium text-zinc-800 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-zinc-50"
-          >
+          <Link href={part.href} className="font-medium text-brand-purple hover:text-brand-pink">
             {part.label}
           </Link>
         </span>
